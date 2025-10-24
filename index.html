@@ -92,6 +92,34 @@
 
   <section class="modulo">
     <h2>Productos Manifestados</h2>
+    <div style="margin-bottom:1rem;">
+      <label>Agregar Producto:</label>
+      <div class="flex-row">
+        <select id="nuevo-producto-tipo">
+          <option value="">Seleccione producto...</option>
+          <option value="Maiz Americano">Maiz Americano</option>
+          <option value="Maiz Argentino">Maiz Argentino</option>
+          <option value="Maiz Brasileno">Maiz Brasileno</option>
+          <option value="DNS">DNS</option>
+          <option value="HRW">HRW</option>
+          <option value="SRW">SRW</option>
+          <option value="Frijol">Frijol</option>
+          <option value="Cascarilla">Cascarilla</option>
+          <option value="Aceite de Palma">Aceite de Palma</option>
+          <option value="Palmite">Palmite</option>
+        </select>
+        <select id="nuevo-producto-bodega">
+          <option value="">Seleccione bodega...</option>
+          <option value="1">Bodega 1</option>
+          <option value="2">Bodega 2</option>
+          <option value="3">Bodega 3</option>
+          <option value="4">Bodega 4</option>
+          <option value="5">Bodega 5</option>
+          <option value="6">Bodega 6</option>
+        </select>
+        <button onclick="agregarProducto()">Agregar</button>
+      </div>
+    </div>
     <table id="tabla-productos">
       <thead>
         <tr>
@@ -100,7 +128,6 @@
       </thead>
       <tbody id="tbody-productos"></tbody>
     </table>
-    <button onclick="agregarProducto()">Agregar Producto</button>
   </section>
 
   <section class="modulo">
@@ -262,10 +289,10 @@
 
   <section class="modulo">
     <h2>Dashboard y Resumen Ejecutivo</h2>
-    <div class="dashboard-card"><span><b>Tiempo Bruto de Operación:</b> <span id="dsh-tiempo-bruto"></span></span></div>
-    <div class="dashboard-card"><span><b>Tiempo Neto de Operación:</b> <span id="dsh-tiempo-neto"></span></span></div>
-    <div class="dashboard-card"><span><b>TPH Promedio (bruto/neto):</b> <span id="dsh-tph"></span></span></div>
-    <div class="dashboard-card"><span><b>Tiempo Hábil Restante:</b> <span id="dsh-laytime-rest"></span></span></div>
+    <div class="dashboard-card"><span><b>Tiempo Bruto de Operación:</b> <span id="dsh-tiempo-bruto">0.00 h</span></span></div>
+    <div class="dashboard-card"><span><b>Tiempo Neto de Operación:</b> <span id="dsh-tiempo-neto">0.00 h</span></span></div>
+    <div class="dashboard-card"><span><b>TPH Promedio (bruto/neto):</b> <span id="dsh-tph">0.0 / 0.0 TM/h</span></span></div>
+    <div class="dashboard-card"><span><b>Tiempo Hábil Restante:</b> <span id="dsh-laytime-rest">0 horas</span></span></div>
     <div class="dashboard-card">
       <label>Gráfica de descarga por hora (simulada):</label>
       <canvas id="grafico-horas" height="120"></canvas>
@@ -296,15 +323,16 @@ function calcLaytime() {
 function calcOperacion() {
   const ini=document.getElementById('inicio-op').value;
   const fin=document.getElementById('fin-op').value;
-  if (!ini) {document.getElementById('tiempo-operacion').innerText="No iniciado";return;}
+  if (!ini) {document.getElementById('tiempo-operacion').innerText="No iniciado";return 0;}
   const dtIni = new Date(ini); let dtFin = fin? new Date(fin): new Date();
   let diff = Math.max((dtFin-dtIni)/3600000,0);
-  document.getElementById('tiempo-operacion').innerText = (diff).toFixed(2) + " h"; return diff;
+  document.getElementById('tiempo-operacion').innerText = (diff).toFixed(2) + " h"; 
+  return diff;
 }
 ['inicio-op','fin-op'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{ calcOperacion();updateDashboard(); });
 });
-// ---- PRODUCTOS
+// ---- PRODUCTOS con listas desplegables
 function renderProductos() {
   const tbody=document.getElementById('tbody-productos'); tbody.innerHTML="";
   productos.forEach((p,i)=>{
@@ -319,7 +347,17 @@ function renderProductos() {
 }
 function actProdDeclarado(idx,vl){ productos[idx].declarado=Number(vl); renderProductos(); updateDashboard();}
 function actProdDescargado(idx,vl){ productos[idx].descargado=Number(vl); renderProductos(); updateDashboard();}
-function agregarProducto() { productos.push({tipo:"",bodega:"",declarado:0,descargado:0}); renderProductos();}
+function agregarProducto() { 
+  const tipo = document.getElementById('nuevo-producto-tipo').value;
+  const bodega = document.getElementById('nuevo-producto-bodega').value;
+  if(!tipo || !bodega) {
+    alert('Debe seleccionar producto y bodega');
+    return;
+  }
+  productos.push({tipo:tipo,bodega:bodega,declarado:0,descargado:0}); 
+  renderProductos();
+  updateDashboard();
+}
 function eliminaProducto(idx){ productos.splice(idx,1); renderProductos(); updateDashboard();}
 document.addEventListener('DOMContentLoaded',()=>{ renderProductos(); });
 // ---- PARADAS
@@ -330,7 +368,9 @@ function registrarParada(e) {
       ini=document.getElementById('parada-inicio').value,
       fin=document.getElementById('parada-fin').value;
   paradas.push({motivo,bodega,ini,fin});
-  renderParadas(); updateDashboard();
+  renderParadas(); 
+  updateDashboard();
+  e.target.reset();
 }
 function renderParadas() {
   const tbody=document.getElementById('tbody-paradas'); tbody.innerHTML="";
@@ -368,6 +408,7 @@ function registrarCamion(e){
   }
   camiones.push({nlist,placa,ficha,estatus});
   renderCamiones();
+  e.target.reset();
 }
 function renderCamiones(){
   const tbody=document.getElementById('tbody-camiones'); tbody.innerHTML="";
@@ -386,7 +427,8 @@ function renderCamiones(){
     </tr>`;
   });
   document.getElementById('camion-total').innerText=camiones.length;
-  document.getElementById('camion-xhora').innerText = Math.round(camiones.length / (Math.max(calcOperacion()||1,1)/24)).toFixed(1);
+  let operacionHoras = calcOperacion() || 1;
+  document.getElementById('camion-xhora').innerText = (camiones.length / Math.max(operacionHoras/24,0.1)).toFixed(1);
 }
 function eliminaCamion(idx){ camiones.splice(idx,1);renderCamiones();}
 function filtrarCamiones(){renderCamiones();}
@@ -398,7 +440,9 @@ function registrarCorrea(e){
       tn=document.getElementById('correa-tn').value,
       hora=document.getElementById('correa-hora').value;
   correa.push({linea,prod,tn:Number(tn),hora});
-  renderCorrea(); updateDashboard();
+  renderCorrea(); 
+  updateDashboard();
+  e.target.reset();
 }
 function renderCorrea(){
   const tbody=document.getElementById('tbody-correa'); tbody.innerHTML="";
@@ -419,10 +463,11 @@ function updateTotales() {
   document.getElementById('total-descargado').innerHTML =
     `<b>Total descargado camión:</b> ${totalCamion.toFixed(2)} TM <b>| Correa:</b> ${totalCorrea.toFixed(2)} TM <b>| Total:</b> ${(totalCamion+totalCorrea).toFixed(2)} TM`;
 }
-// ---- DASHBOARD
+// ---- DASHBOARD con actualización automática
 function updateDashboard(){
   let bruto=calcOperacion()||0;
-  let tiempoParadas=0; paradas.forEach(p=> {
+  let tiempoParadas=0; 
+  paradas.forEach(p=> {
     if (p.ini&&p.fin) tiempoParadas+=((new Date(p.fin))-(new Date(p.ini)))/3600000;
   });
   let neto = Math.max(bruto-tiempoParadas,0);
@@ -438,7 +483,12 @@ function updateDashboard(){
   updateGrafico();
 }
 setInterval(updateDashboard,30000);
-document.addEventListener('DOMContentLoaded',()=>{ updateDashboard(); renderParadas(); renderCamiones(); renderCorrea(); });
+document.addEventListener('DOMContentLoaded',()=>{ 
+  updateDashboard(); 
+  renderParadas(); 
+  renderCamiones(); 
+  renderCorrea(); 
+});
 // ---- GRAFICA GENERICA
 function updateGrafico(){
   let ctx=document.getElementById('grafico-horas').getContext('2d');
@@ -449,21 +499,26 @@ function updateGrafico(){
     if (!horas[h]) horas[h]=0;
     horas[h]+=c.tn;
   });
-  let labels=Object.keys(horas); let vals=labels.map(l=>horas[l]);
+  let labels=Object.keys(horas); 
+  let vals=labels.map(l=>horas[l]);
+  if(labels.length===0) return;
   let maxV = Math.max(...vals,1);
-  let W=ctx.canvas.width, H=ctx.canvas.height; let step = labels.length>1? W/(labels.length-1): W;
+  let W=ctx.canvas.width, H=ctx.canvas.height; 
+  let step = labels.length>1? W/(labels.length-1): W/2;
   ctx.beginPath(); ctx.strokeStyle="#2355a4"; ctx.lineWidth=2;
   labels.forEach((h,i)=>{
     let x = i*step, y = H-(vals[i]/maxV*0.8*H)-18;
     if(i==0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     ctx.arc(x, y, 2.3, 0, 2*Math.PI);
-  }); ctx.stroke();
+  }); 
+  ctx.stroke();
   ctx.fillStyle="#333";
-  labels.forEach((h,i)=> ctx.fillText(h, i*step, H-2));
+  ctx.font="10px Arial";
+  labels.forEach((h,i)=> ctx.fillText(h, i*step-10, H-2));
   ctx.fillStyle="#237acf";
   labels.forEach((h,i)=> ctx.fillRect(i*step-2, H-(vals[i]/maxV*0.8*H)-8,4,8));
 }
-// ===== ARCHIVO TONELADAS CAMIONES EXACTO PARA TU FORMATO =====
+// ===== ARCHIVO TONELADAS CAMIONES =====
 let dataImport = [], dataResumen = {}, horas = [];
 document.getElementById('import-camiones').addEventListener('change', function(evt){
   const file = evt.target.files[0];
@@ -477,13 +532,14 @@ document.getElementById('import-camiones').addEventListener('change', function(e
   };
   reader.readAsArrayBuffer(file);
 });
-// === FUNCION AJUSTADA A TU ARCHIVO BASE
 function procesarTonCamiones(sheet){
-  // Buscar fila encabezados reales (por ejemplo, una que tenga "Fecha Entrada"/"Producto"/"Peso Neto (t)")
   let headerIdx = sheet.findIndex(row =>
     row.includes("Fecha Entrada") && row.includes("Producto") && row.includes("Peso Neto (t)")
   );
-  if(headerIdx==-1){document.getElementById('res-ton-camiones').innerHTML="No se detectan encabezados válidos.";return;}
+  if(headerIdx==-1){
+    document.getElementById('res-ton-camiones').innerHTML="No se detectan encabezados válidos.";
+    return;
+  }
   let header = sheet[headerIdx];
   let idxFecha = header.findIndex(h=>h==="Fecha Entrada");
   let idxProd  = header.findIndex(h=>h==="Producto");
@@ -530,6 +586,7 @@ function graficarTonCamiones(objHoras, tmMec){
   let products = {};
   Object.values(objHoras).forEach(prods=>Object.keys(prods).forEach(p=>products[p]=true));
   let labels = horas;
+  if(labels.length===0) return;
   let colores = ["#28568d", "#bda25f", "#7da132", "#d48148", "#b97a7a"];
   Object.keys(products).forEach((prod,pidx)=>{
     ctx.beginPath();
@@ -547,7 +604,6 @@ function graficarTonCamiones(objHoras, tmMec){
       ctx.fillRect(x,y,8,100-y);
     });
   });
-  // Línea mecanizado suma
   if(tmMec>0){
     ctx.beginPath();
     ctx.strokeStyle="#f29e23"; ctx.lineWidth=2;
