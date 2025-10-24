@@ -62,7 +62,6 @@
     .card-table th { text-align:left; color: var(--primary);}
     .btn-main { padding:0.55rem 1.35rem; font-size:1rem; background:var(--primary); color:#fff; border:none; border-radius:var(--radius-xs); cursor:pointer;}
   </style>
-  <!-- FIREBASE SCRIPTS Y CONFIG -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script>
@@ -83,11 +82,9 @@
     let camiones = [];
     let incidentes = [];
     let currentUsername = '';
-    // Aquí se cargarán otras variables globales.
   </script>
 </head>
 <body>
-<!-- MODAL LOGIN -->
 <div class="login-overlay" id="login-overlay">
   <div class="login-modal">
     <h2>Bienvenido a Ojiva</h2>
@@ -96,14 +93,12 @@
     <button onclick="login()" class="btn-main">Entrar</button>
   </div>
 </div>
-<!-- HEADER VISUAL -->
 <div class="header">
   <span class="logo"><i class="fa-solid fa-ship"></i></span>
   OJIVA GESTIÓN DESCARGA
 </div>
-  
+
 <div class="main-container" id="main-container">
-  <!-- MENÚ PRINCIPAL INICIO -->
   <div id="home-menu" class="home-cards">
     <div class="home-card" onclick="mostrarVista('productos-view')">
       <i class="fa-solid fa-boxes-stacked"></i>
@@ -125,8 +120,8 @@
       <i class="fa-solid fa-chart-simple"></i>
       <span>Dashboard / Reportes</span>
     </div>
-   </div>
-  <div id="productos-view" class="view">
+  </div>
+<div id="productos-view" class="view">
   <h2>Productos Manifestados</h2>
   <select id="nuevo-producto-tipo">
     <option value="">Seleccione producto...</option>
@@ -264,11 +259,9 @@
     });
   }
 
-  // Inicializa views ocultas y mostrar home
   document.addEventListener('DOMContentLoaded', () => {
     mostrarVista('home-menu');
   });
-
 </script>
 <button id="btnExportExcel" class="btn-main" style="margin: 1rem 0;">Exportar a Excel</button>
 
@@ -311,11 +304,6 @@
   document.getElementById("btnExportExcel").addEventListener("click", exportToExcel);
 </script>
 
-<!-- CIERRE DE CONTENEDORES PRINCIPALES -->
-</div>  <!-- Cierra main-container -->
+</div>
 </body>
 </html>
-
-
-
-
