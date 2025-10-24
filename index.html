@@ -1,234 +1,382 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Panel de Trazabilidad de Descarga de Buques</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    :root {
-      --primary: #2355a4;
-      --secondary: #3498db;
-      --success: #27ae60;
-      --danger: #e74c3c;
-      --warning: #f39c12;
-      --light: #f5f7fa;
-      --white: #fff;
-      --surface: #f9fbfd;
-      --card: #e6eef7;
-      --border: #dbe3eb;
-      --shadow: 0 2px 8px rgba(0,0,0,0.09);
-      --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
-      --radius: 14px;
-      --radius-sm: 8px;
-      --radius-xs: 6px;
-    }
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      color: #19324c;
-      overflow-x: hidden;
-    }
+<meta charset="UTF-8">
+<title>Panel de Trazabilidad de Descarga de Buques</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --primary: #2355a4;
+    --secondary: #3498db;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --light: #f5f7fa;
+    --white: #fff;
+    --surface: #f9fbfd;
+    --card: #e6eef7;
+    --border: #dbe3eb;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #19324c;
+    overflow-x: hidden;
+  }
+  /* Modal login */
+  .login-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+  }
+  .login-modal {
+    background: var(--white);
+    padding: 3rem 2.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: slideDown 0.4s ease-out;
+  }
+  @keyframes slideDown {
+    from {opacity: 0; transform: translateY(-50px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+  .login-modal h2 {
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+  }
+  .login-modal input {
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+  }
+  .login-modal input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(35,85,164,0.1);
+  }
+  .login-modal button {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .login-modal button:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(35,85,164,0.3);
+  }
+  /* Header y navegación */
+  header {
+    background: linear-gradient(135deg, var(--primary), #102842 65%);
+    color: var(--white);
+    padding: 1rem 2rem;
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .header-left img {
+    height: 45px;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    padding: 6px;
+  }
+  .header-left h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.15);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-xs);
+  }
+  .user-info i {
+    font-size: 1.2rem;
+  }
+  nav {
+    display: flex;
+    gap: 1rem;
+    margin: 1.2rem 0;
+    flex-wrap: wrap;
+  }
+  .nav-button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  .nav-button:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+  }
+  .export-button {
+    background: var(--success);
+  }
+  .export-button:hover {
+    background: #1e8449;
+  }
+  /* Contenedor principal */
+  .main-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    position: relative;
+    display: none;
+  }
+  /* Vista de secciones */
+  .view {
+    display: none;
+    opacity: 0;
+    transform: perspective(1000px) rotateY(-10deg);
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  .view.active {
+    display: block;
+    opacity: 1;
+    transform: none;
+  }
+  .dashboard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    margin: 1.7rem 0 2.5rem;
+  }
+  .dashboard-card {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 1.6rem 2rem;
+    width: 340px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .dashboard-card h4 {
+    margin-bottom: 0.7rem;
+    font-size: 1.13rem;
+  }
+  .card-table {
+    margin: 0.7rem 0 0.5rem;
+    width: 90%;
+    border-collapse: collapse;
+  }
+  .card-table th,
+  .card-table td {
+    padding: 0.23rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-table th {
+    text-align: left;
+    color: var(--primary);
+  }
+  .btn-main {
+    padding: 0.55rem 1.35rem;
+    font-size: 1rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+  }
 
-    /* Estilos login modal */
-    .login-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      backdrop-filter: blur(5px);
-    }
+  /* Más estilos según la plantilla original */
+</style>
 
-    .login-modal {
-      background: var(--white);
-      padding: 3rem 2.5rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-      animation: slideDown 0.4s ease-out;
-    }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-50px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .login-modal h2 {
-      color: var(--primary);
-      margin-bottom: 1.5rem;
-      font-size: 1.8rem;
-    }
-
-    .login-modal input {
-      width: 100%;
-      padding: 0.8rem;
-      margin-bottom: 1rem;
-      border: 2px solid var(--border);
-      border-radius: var(--radius-xs);
-      font-size: 1rem;
-      transition: border-color 0.3s;
-    }
-
-    .login-modal input:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(35, 85, 164, 0.1);
-    }
-
-    .login-modal button {
-      width: 100%;
-      padding: 0.9rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: var(--radius-xs);
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .login-modal button:hover {
-      background: var(--secondary);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(35, 85, 164, 0.3);
-    }
-  </style>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHCdzhcrgEhP9nke8cu7yL_aqgfVSzHWo",
-      authDomain: "ojiva-gestion-descarga.firebaseapp.com",
-      projectId: "ojiva-gestion-descarga",
-      storageBucket: "ojiva-gestion-descarga.firebasestorage.app",
-      messagingSenderId: "334520690865",
-      appId: "1:334520690865:web:63f9658eb3fe3390709a90",
-      measurementId: "G-EG030XNJP8"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    let productos = [];
-    let paradas = [];
-    let camiones = [];
-    let incidentes = [];
-    let currentUsername = '';
-  </script>
-
-</head>
-<body>
-<div class="login-overlay" id="login-overlay">
-  <div class="login-modal">
-    <h2>Bienvenido a Ojiva</h2>
-    <p style="font-size: 1.1rem;">Por favor, ingresa tu nombre de usuario para acceder</p>
-    <input type="text" id="username" placeholder="Ingresa tu nombre..." />
-    <button onclick="login()">Entrar</button>
-  </div>
-</div>
-<header>
-  <div class="header-left">
-    <img src="path_to_logo.png" alt="Logo Ojiva" />
-    <h1>Panel de Trazabilidad de Descarga de Buques</h1>
-  </div>
-  <div class="header-right">
-    <div class="user-info">
-      <i class="fa-solid fa-user"></i>
-      <span id="user-name-display">Usuario</span>
-    </div>
-  </div>
-</header>
-
-<div class="main-container" id="main-container">
-  <nav>
-    <button class="nav-button" onclick="mostrarVista('productos-view')">
-      <i class="fa-solid fa-boxes-stacked"></i> Productos Manifestados
-    </button>
-    <button class="nav-button" onclick="mostrarVista('paradas-view')">
-      <i class="fa-solid fa-stopwatch"></i> Registro de Paradas
-    </button>
-    <button class="nav-button" onclick="mostrarVista('camiones-view')">
-      <i class="fa-solid fa-truck"></i> Tracking de Camiones
-    </button>
-    <button class="nav-button" onclick="mostrarVista('incidentes-view')">
-      <i class="fa-solid fa-exclamation-triangle"></i> Incidentes
-    </button>
-    <button class="nav-button" onclick="mostrarVista('dashboard-view')">
-      <i class="fa-solid fa-chart-simple"></i> Dashboard / Reportes
-    </button>
-  </nav>
-<div id="productos-view" class="view">
-  <h2>Productos Manifestados</h2>
-  <select id="nuevo-producto-tipo">
-    <option value="">Seleccione producto...</option>
-    <option value="Maz Americano">Maz Americano</option>
-    <option value="Maz Argentino">Maz Argentino</option>
-    <option value="Maz Brasileo">Maz Brasileo</option>
-  </select>
-  <select id="nuevo-producto-bodega">
-    <option value="">Seleccione bodega...</option>
-    <option value="1">Bodega 1</option>
-    <option value="2">Bodega 2</option>
-  </select>
-  <button onclick="agregarProducto()" class="btn-main">Agregar Producto</button>
-  <ul id="lista-productos"></ul>
-</div>
-
-<div id="paradas-view" class="view">
-  <h2>Registro de Paradas</h2>
-  <button onclick="agregarParada()" class="btn-main">Agregar Parada</button>
-  <ul id="lista-paradas"></ul>
-</div>
-
-<div id="camiones-view" class="view">
-  <h2>Tracking de Camiones</h2>
-  <button onclick="agregarCamion()" class="btn-main">Agregar Camión</button>
-  <ul id="lista-camiones"></ul>
-</div>
-
-<div id="incidentes-view" class="view">
-  <h2>Registro de Incidentes</h2>
-  <textarea id="descripcion-incidente" placeholder="Describa el incidente..." rows="4" style="width: 100%; margin-bottom: 10px;"></textarea>
-  <button onclick="agregarIncidente()" class="btn-main">Registrar Incidente</button>
-  <ul id="lista-incidentes"></ul>
-</div>
-
-<div id="dashboard-view" class="view">
-  <h2>Dashboard / Reportes</h2>
-  <div class="dashboard-grid">
-    <div class="dashboard-card">
-      <h4>Productos Declarados</h4>
-      nvas id="graficoProductos" width="300"00" height="150"></canvas>
-    </div>
-    <div class="dashboard-card">
-      <h4>Paradas por Usuario</h4>
-      nvas id="graficoParadas" width="300" height="t="150"></canvas>
-    </div>
-  </div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHCdzhcrgEhP9nke8cu7yL_aqgfVSzHWo",
+    authDomain: "ojiva-gestion-descarga.firebaseapp.com",
+    projectId: "ojiva-gestion-descarga",
+    storageBucket: "ojiva-gestion-descarga.firebasestorage.app",
+    messagingSenderId: "334520690865",
+    appId: "1:334520690865:web:63f9658eb3fe3390709a90",
+    measurementId: "G-EG030XNJP8"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  let productos = [];
+  let paradas = [];
+  let camiones = [];
+  let incidentes = [];
+  let currentUsername = '';
+
+  function login() {
+    const input = document.getElementById('username').value.trim();
+    if (!input) {
+      alert('Por favor ingresa tu nombre');
+      return;
+    }
+    currentUsername = input;
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('main-container').style.display = 'block';
+    document.getElementById('user-name-display').innerText = currentUsername;
+    cargarDatos();
+    mostrarVista('productos-view');
+  }
+
+
+  function cargarDatos() {
+    cargarProductosDesdeFirebase();
+    cargarParadasDesdeFirebase();
+    cargarCamionesDesdeFirebase();
+    cargarIncidentesDesdeFirebase();
+  }
+
   function mostrarVista(id) {
     document.querySelectorAll('.view').forEach(view => {
       view.classList.remove('active');
     });
     document.getElementById(id).classList.add('active');
+  }
+
+  function agregarProducto() {
+    const tipo = document.getElementById('nuevo-producto-tipo').value;
+    const bodega = document.getElementById('nuevo-producto-bodega').value;
+    if (!tipo || !bodega) {
+      alert('Debe seleccionar producto y bodega');
+      return;
+    }
+    db.collection('productos').add({
+      tipo,
+      bodega,
+      declarado: 0,
+      descargado: 0,
+      usuario: currentUsername,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => alert('Producto guardado!'));
+  }
+
+  function cargarProductosDesdeFirebase() {
+    db.collection('productos')
+      .orderBy('creadoEn', 'desc')
+      .onSnapshot(snapshot => {
+        productos = [];
+        snapshot.forEach(doc => productos.push({ ...doc.data(), id: doc.id }));
+        renderProductos();
+      });
+  }
+
+  function renderProductos() {
+    const ul = document.getElementById('lista-productos');
+    ul.innerHTML = '';
+    productos.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `${p.tipo} - ${p.bodega} (Declarado: ${p.declarado}, Descargado: ${p.descargado})`;
+      ul.appendChild(li);
+    });
+  }
+
+  function agregarParada() {
+    db.collection('paradas').add({
+      usuario: currentUsername,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => alert('Parada registrada!'));
+  }
+
+  function cargarParadasDesdeFirebase() {
+    db.collection('paradas')
+      .orderBy('creadoEn', 'desc')
+      .onSnapshot(snapshot => {
+        paradas = [];
+        snapshot.forEach(doc => paradas.push({ ...doc.data(), id: doc.id }));
+        renderParadas();
+      });
+  }
+
+  function renderParadas() {
+    const ul = document.getElementById('lista-paradas');
+    ul.innerHTML = '';
+    paradas.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `Parada: ${p.usuario} - ${p.creadoEn?.toDate()}`;
+      ul.appendChild(li);
+    });
+  }
+
+  function agregarCamion() {
+    db.collection('camiones').add({
+      usuario: currentUsername,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => alert('Camión registrado!'));
+  }
+
+  function cargarCamionesDesdeFirebase() {
+    db.collection('camiones')
+      .orderBy('creadoEn', 'desc')
+      .onSnapshot(snapshot => {
+        camiones = [];
+        snapshot.forEach(doc => camiones.push({ ...doc.data(), id: doc.id }));
+        renderCamiones();
+      });
+  }
+
+  function renderCamiones() {
+    const ul = document.getElementById('lista-camiones');
+    ul.innerHTML = '';
+    camiones.forEach(c => {
+      const li = document.createElement('li');
+      li.textContent = `Camión: ${c.usuario} - ${c.creadoEn?.toDate()}`;
+      ul.appendChild(li);
+    });
   }
 
   function agregarIncidente() {
@@ -253,7 +401,7 @@
       .orderBy('creadoEn', 'desc')
       .onSnapshot(snapshot => {
         incidentes = [];
-        snapshot.forEach(doc => incidentes.push({...doc.data(), id: doc.id}));
+        snapshot.forEach(doc => incidentes.push({ ...doc.data(), id: doc.id }));
         renderIncidentes();
       });
   }
@@ -261,9 +409,9 @@
   function renderIncidentes() {
     const ul = document.getElementById('lista-incidentes');
     ul.innerHTML = '';
-    incidentes.forEach(inc => {
+    incidentes.forEach(i => {
       const li = document.createElement('li');
-      li.textContent = `${inc.descripcion} - por ${inc.usuario} en ${inc.creadoEn?.toDate()}`;
+      li.textContent = `${i.descripcion} - por ${i.usuario} en ${i.creadoEn?.toDate()}`;
       ul.appendChild(li);
     });
   }
@@ -276,158 +424,103 @@
   function crearGraficoProductos() {
     const ctx = document.getElementById('graficoProductos').getContext('2d');
     const tipos = [...new Set(productos.map(p => p.tipo))];
-    const cantidades = tipos.map(tipo => productos.filter(p => p.tipo === tipo).reduce((sum, p) => sum + (p.declarado || 0), 0));
+    const cantidades = tipos.map(tipo =>
+      productos.filter(p => p.tipo === tipo).reduce((sum, p) => sum + (p.declarado || 0), 0)
+    );
     if (window.chartProductos) window.chartProductos.destroy();
 
     window.chartProductos = new Chart(ctx, {
-      type: 'bar',
+      type: "bar",
       data: {
         labels: tipos,
-        datasets: [{
-          label: 'Productos Declarados',
-          data: cantidades,
-          backgroundColor: '#2355a4'
-        }]
-      }
+        datasets: [
+          {
+            label: "Productos Declarados",
+            data: cantidades,
+            backgroundColor: "#2355a4",
+          },
+        ],
+      },
     });
   }
 
   function crearGraficoParadas() {
-    const ctx = document.getElementById('graficoParadas').getContext('2d');
-    const usuarios = [...new Set(paradas.map(p => p.usuario))];
-    const cantidades = usuarios.map(usuario => paradas.filter(p => p.usuario === usuario).length);
+    const ctx2 = document.getElementById("graficoParadas").getContext("2d");
+    const usuarios = [...new Set(paradas.map((p) => p.usuario))];
+    const cantidades = usuarios.map(
+      (usuario) => paradas.filter((p) => p.usuario === usuario).length
+    );
     if (window.chartParadas) window.chartParadas.destroy();
 
-    window.chartParadas = new Chart(ctx, {
-      type: 'pie',
+    window.chartParadas = new Chart(ctx2, {
+      type: "pie",
       data: {
         labels: usuarios,
-        datasets: [{
-          label: 'Paradas por usuario',
-          data: cantidades,
-          backgroundColor: ['#2355a4', '#3498db', '#27ae60', '#e74c3c', '#f39c12']
-        }]
-      }
+        datasets: [
+          {
+            label: "Paradas por usuario",
+            data: cantidades,
+            backgroundColor: [
+              "#2355a4",
+              "#3498db",
+              "#27ae60",
+              "#e74c3c",
+              "#f39c12",
+            ],
+          },
+        ],
+      },
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    mostrarVista('home-menu');
-  });
+  document
+    .getElementById("btnExportExcel")
+    .addEventListener("click", () => {
+      let wb = XLSX.utils.book_new();
+
+      let wsProductos = XLSX.utils.json_to_sheet(
+        productos.map((p) => ({
+          tipo: p.tipo,
+          bodega: p.bodega,
+          declarado: p.declarado,
+          descargado: p.descargado,
+          usuario: p.usuario,
+          creadoEn: p.creadoEn
+            ? new Date(p.creadoEn.seconds * 1000).toLocaleString()
+            : "",
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, wsProductos, "Productos");
+
+      let wsParadas = XLSX.utils.json_to_sheet(
+        paradas.map((p) => ({
+          usuario: p.usuario,
+          creadoEn: p.creadoEn ? new Date(p.creadoEn.seconds * 1000).toLocaleString() : "",
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, wsParadas, "Paradas");
+
+      let wsCamiones = XLSX.utils.json_to_sheet(
+        camiones.map((c) => ({
+          usuario: c.usuario,
+          creadoEn: c.creadoEn ? new Date(c.creadoEn.seconds * 1000).toLocaleString() : "",
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, wsCamiones, "Camiones");
+
+      let wsIncidentes = XLSX.utils.json_to_sheet(
+        incidentes.map((i) => ({
+          descripcion: i.descripcion,
+          usuario: i.usuario,
+          creadoEn: i.creadoEn ? new Date(i.creadoEn.seconds * 1000).toLocaleString() : "",
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, wsIncidentes, "Incidentes");
+
+      XLSX.writeFile(wb, "gestion_descarga.xlsx");
+    });
+
 </script>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Panel de Trazabilidad de Descarga de Buques</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    /* Reproducirías aquí tu CSS original completo, animaciones, y estilos */
-    :root {
-      --primary: #2355a4;
-      --secondary: #3498db;
-      --success: #27ae60;
-      --danger: #e74c3c;
-      --warning: #f39c12;
-      --light: #f5f7fa;
-      --white: #fff;
-      --surface: #f9fbfd;
-      --card: #e6eef7;
-      --border: #dbe3eb;
-      --shadow: 0 2px 8px rgba(0,0,0,0.09);
-      --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
-      --radius: 14px;
-      --radius-sm: 8px;
-      --radius-xs: 6px;
-    }
-    /* Más estilos tabla, botones, layouts, etc */
-  </style>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHCdzhcrgEhP9nke8cu7yL_aqgfVSzHWo",
-      authDomain: "ojiva-gestion-descarga.firebaseapp.com",
-      projectId: "ojiva-gestion-descarga",
-      storageBucket: "ojiva-gestion-descarga.firebasestorage.app",
-      messagingSenderId: "334520690865",
-      appId: "1:334520690865:web:63f9658eb3fe3390709a90",
-      measurementId: "G-EG030XNJP8"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    let productos = [];
-    let paradas = [];
-    let camiones = [];
-    let incidentes = [];
-    let currentUsername = '';
-
-    // Aquí irán las funciones JS que conectan y manejan Firebase, renderizan DOM, gestionan login, gráficos, export Excel...
-  </script>
-</head>
-<body>
-  <div class="login-overlay" id="login-overlay">
-    <div class="login-modal">
-    <h2>Bienvenido a Ojiva</h2>
-    <p style="font-size: 1.1rem;">Por favor, ingresa tu nombre de usuario para acceder</p>
-    <input type="text" id="username" placeholder="Ingresa tu nombre..." />
-    <button onclick="login()">Entrar</button>
-    </div>
-  </div>
-
-  <header>
-    <div class="header-left">
-      <img src="logo.png" alt="Logo Ojiva" />
-      <h1>Panel de Trazabilidad de Descarga de Buques</h1>
-    </div>
-    <div class="header-right">
-      <div class="user-info">
-        <i class="fa-solid fa-user"></i>
-        <span id="user-name-display"></span>
-      </div>
-    </div>
-  </header>
-
-  <div class="main-container" id="main-container">
-    <nav>
-      <button class="nav-button" onclick="mostrarVista('productos-view')"><i class="fa-solid fa-boxes-stacked"></i> Productos Manifestados</button>
-      <button class="nav-button" onclick="mostrarVista('paradas-view')"><i class="fa-solid fa-stopwatch"></i> Registro de Paradas</button>
-      <button class="nav-button" onclick="mostrarVista('camiones-view')"><i class="fa-solid fa-truck"></i> Tracking de Camiones</button>
-      <button class="nav-button" onclick="mostrarVista('incidentes-view')"><i class="fa-solid fa-exclamation-triangle"></i> Incidentes</button>
-      <button class="nav-button" onclick="mostrarVista('dashboard-view')"><i class="fa-solid fa-chart-simple"></i> Dashboard / Reportes</button>
-    </nav>
-
-    <div id="productos-view" class="view">
-      <h2>Productos Manifestados</h2>
-      <!-- Inputs y botones -->
-    </div>
-    <div id="paradas-view" class="view">
-      <h2>Registro de Paradas</h2>
-      <!-- Inputs y botones -->
-    </div>
-    <div id="camiones-view" class="view">
-      <h2>Tracking de Camiones</h2>
-      <!-- Inputs y botones -->
-    </div>
-    <div id="incidentes-view" class="view">
-      <h2>Registro de Incidentes</h2>
-      <!-- Inputs y botones -->
-    </div>
-    <div id="dashboard-view" class="view">
-      <h2>Dashboard / Reportes</h2>
-      <!-- Gráficos -->
-    </div>
-
-    <button id="btnExportExcel" class="export-button">Exportar a Excel</button>
-
-  </div>
-
-  <script>
-    // Funciones javascript para login, Firebase, render, gráficos y exportar datos
-  </script>
 </body>
 </html>
