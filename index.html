@@ -38,6 +38,90 @@
       color: #19324c;
       overflow-x: hidden;
     }
+
+    /* Modal de Login */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      backdrop-filter: blur(5px);
+    }
+
+    .login-modal {
+      background: var(--white);
+      padding: 3rem 2.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      animation: slideDown 0.4s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-modal h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    .login-modal i.fa-user-circle {
+      font-size: 4rem;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .login-modal input {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .login-modal input:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(35, 85, 164, 0.1);
+    }
+
+    .login-modal button {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-xs);
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-modal button:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(35, 85, 164, 0.3);
+    }
     
     /* Header con navegación */
     header {
@@ -70,8 +154,27 @@
       font-size: 1.4rem;
       font-weight: 700;
     }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-xs);
+    }
+
+    .user-info i {
+      font-size: 1.2rem;
+    }
     
-    .nav-button {
+    .nav-button, .export-button {
       background: rgba(255,255,255,0.2);
       border: none;
       color: white;
@@ -85,9 +188,17 @@
       transition: all 0.3s ease;
     }
     
-    .nav-button:hover {
+    .nav-button:hover, .export-button:hover {
       background: rgba(255,255,255,0.3);
       transform: translateY(-2px);
+    }
+
+    .export-button {
+      background: var(--success);
+    }
+
+    .export-button:hover {
+      background: #1e8449;
     }
     
     /* Contenedor principal */
@@ -222,9 +333,15 @@
     .section-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
       border-bottom: 2px solid var(--border);
+    }
+
+    .section-header-left {
+      display: flex;
+      align-items: center;
     }
     
     .section-header i {
@@ -237,6 +354,25 @@
       font-size: 1.5rem;
       font-weight: 600;
       color: var(--primary);
+    }
+
+    .section-export-btn {
+      background: var(--success);
+      color: white;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .section-export-btn:hover {
+      background: #1e8449;
+      transform: translateY(-2px);
     }
     
     /* Estilos de formularios */
@@ -418,6 +554,17 @@
       border-radius: 4px;
       display: inline-block;
     }
+
+    .user-badge {
+      display: inline-block;
+      background: #e8f4f8;
+      color: var(--primary);
+      padding: 0.2em 0.6em;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -437,19 +584,47 @@
       .header-left h1 {
         font-size: 1.1rem;
       }
+
+      .header-right {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
+
+<!-- Modal de Login -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-modal">
+    <i class="fas fa-user-circle"></i>
+    <h2>Iniciar Sesión</h2>
+    <p style="color: #666; margin-bottom: 1.5rem;">Ingresa tu nombre para continuar</p>
+    <input type="text" id="usernameInput" placeholder="Nombre de usuario" autocomplete="off">
+    <button onclick="login()"><i class="fas fa-sign-in-alt"></i> Ingresar</button>
+  </div>
+</div>
 
 <header>
   <div class="header-left">
     <img src="image.jpg" alt="Logo" />
     <h1><i class="fas fa-ship"></i> Panel de Trazabilidad de Descarga</h1>
   </div>
-  <button class="nav-button" onclick="showView('home')">
-    <i class="fas fa-home"></i> Inicio
-  </button>
+  <div class="header-right">
+    <div class="user-info">
+      <i class="fas fa-user"></i>
+      <span id="currentUser"></span>
+    </div>
+    <button class="export-button" onclick="exportarTodoExcel()">
+      <i class="fas fa-file-excel"></i> Exportar Todo a Excel
+    </button>
+    <button class="nav-button" onclick="showView('home')">
+      <i class="fas fa-home"></i> Inicio
+    </button>
+    <button class="nav-button" onclick="cerrarSesion()">
+      <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+    </button>
+  </div>
 </header>
 
 <div class="main-container">
@@ -505,8 +680,13 @@
   <div id="info-general" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-ship"></i>
-        <h2>Información General del Buque</h2>
+        <div class="section-header-left">
+          <i class="fas fa-ship"></i>
+          <h2>Información General del Buque</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('info-general')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <div class="flex-row">
         <div class="flex-col-2">
@@ -556,8 +736,13 @@
   <div id="productos" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-boxes"></i>
-        <h2>Productos Manifestados</h2>
+        <div class="section-header-left">
+          <i class="fas fa-boxes"></i>
+          <h2>Productos Manifestados</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('productos')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <div class="flex-row">
         <select id="nuevo-producto-tipo">
@@ -593,6 +778,7 @@
             <th><i class="fa fa-warehouse"></i> Bodega</th>
             <th><i class="fa fa-clipboard-list"></i> Declarado (TM)</th>
             <th><i class="fa fa-truck-loading"></i> Descargado (TM)</th>
+            <th><i class="fa fa-user"></i> Usuario</th>
             <th><i class="fa fa-trash-alt"></i> Acción</th>
           </tr>
         </thead>
@@ -605,8 +791,13 @@
   <div id="paradas" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-clock"></i>
-        <h2>Registro de Paradas / Incidentes</h2>
+        <div class="section-header-left">
+          <i class="fas fa-clock"></i>
+          <h2>Registro de Paradas / Incidentes</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('paradas')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <form onsubmit="registrarParada(event)">
         <div class="flex-row">
@@ -653,6 +844,7 @@
             <th><i class="fa fa-play"></i> Inicio</th>
             <th><i class="fa fa-stop"></i> Fin</th>
             <th><i class="fa fa-history"></i> Duración</th>
+            <th><i class="fa fa-user"></i> Usuario</th>
             <th><i class="fa fa-trash-alt"></i> Acción</th>
           </tr>
         </thead>
@@ -668,8 +860,13 @@
   <div id="camiones" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-truck"></i>
-        <h2>Tracking de Camiones</h2>
+        <div class="section-header-left">
+          <i class="fas fa-truck"></i>
+          <h2>Tracking de Camiones</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('camiones')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <form onsubmit="registrarCamion(event)">
         <div class="flex-row">
@@ -710,6 +907,7 @@
             <th><i class="fa fa-id-badge"></i> Placa</th>
             <th><i class="fa fa-file-signature"></i> Ficha</th>
             <th><i class="fa fa-clipboard-check"></i> Estatus</th>
+            <th><i class="fa fa-user"></i> Usuario</th>
             <th><i class="fa fa-trash-alt"></i> Acción</th>
           </tr>
         </thead>
@@ -726,8 +924,13 @@
   <div id="correa" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-cogs"></i>
-        <h2>Correa Mecanizada</h2>
+        <div class="section-header-left">
+          <i class="fas fa-cogs"></i>
+          <h2>Correa Mecanizada</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('correa')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <form onsubmit="registrarCorrea(event)">
         <div class="flex-row">
@@ -760,6 +963,7 @@
             <th><i class="fa fa-box"></i> Producto</th>
             <th><i class="fa fa-balance-scale-left"></i> Toneladas</th>
             <th><i class="fa fa-clock"></i> Hora</th>
+            <th><i class="fa fa-user"></i> Usuario</th>
             <th><i class="fa fa-trash-alt"></i> Acción</th>
           </tr>
         </thead>
@@ -775,8 +979,13 @@
   <div id="toneladas" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-file-excel"></i>
-        <h2>Toneladas Camiones</h2>
+        <div class="section-header-left">
+          <i class="fas fa-file-excel"></i>
+          <h2>Toneladas Camiones</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('toneladas')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <div style="margin-bottom: 1rem;">
         <input type="file" id="import-camiones" accept=".xlsx,.xls"/>
@@ -799,6 +1008,7 @@
             <th>Producto</th>
             <th>Toneladas</th>
             <th>Hora</th>
+            <th>Usuario</th>
             <th>Acción</th>
           </tr>
         </thead>
@@ -821,8 +1031,13 @@
   <div id="dashboard" class="view">
     <div class="content-wrapper">
       <div class="section-header">
-        <i class="fas fa-chart-line"></i>
-        <h2>Dashboard Ejecutivo</h2>
+        <div class="section-header-left">
+          <i class="fas fa-chart-line"></i>
+          <h2>Dashboard Ejecutivo</h2>
+        </div>
+        <button class="section-export-btn" onclick="exportarSeccion('dashboard')">
+          <i class="fas fa-file-excel"></i> Exportar
+        </button>
       </div>
       <div class="dashboard-card">
         <i class="fa fa-truck kpi-icon"></i>
@@ -865,6 +1080,36 @@
 </div>
 
 <script>
+// ==== SISTEMA DE AUTENTICACIÓN ====
+let currentUsername = '';
+
+function login() {
+  const username = document.getElementById('usernameInput').value.trim();
+  if (!username) {
+    alert('Por favor ingresa tu nombre');
+    return;
+  }
+  currentUsername = username;
+  document.getElementById('currentUser').innerText = username;
+  document.getElementById('loginOverlay').style.display = 'none';
+  cargarDatosGuardados();
+}
+
+function cerrarSesion() {
+  if(confirm('¿Cerrar sesión?')) {
+    currentUsername = '';
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('usernameInput').value = '';
+  }
+}
+
+// Prevenir Enter en login
+document.getElementById('usernameInput').addEventListener('keypress', function(e) {
+  if(e.key === 'Enter') {
+    login();
+  }
+});
+
 // ==== NAVEGACIÓN ENTRE VISTAS ====
 function showView(viewId) {
   const views = document.querySelectorAll('.view');
@@ -883,6 +1128,205 @@ let laytimeHoras = 0, laytimeAdjusted = 0;
 let dataImport = [], dataResumen = {}, horas = [];
 let tiempoBruto = 0, tiempoParadas = 0, tiempoLluvia = 0;
 
+// ==== GUARDAR Y CARGAR DATOS (LocalStorage) ====
+function guardarDatos() {
+  const datos = {
+    productos, paradas, camiones, correa, mecanizado,
+    buqueNombre: document.getElementById('buque-nombre').value,
+    buqueEta: document.getElementById('buque-eta').value,
+    buqueNor: document.getElementById('buque-nor').value,
+    buqueRata: document.getElementById('buque-rata').value,
+    buqueCondicion: document.getElementById('buque-condicion').value,
+    buqueTm: document.getElementById('buque-tm').value,
+    inicioOp: document.getElementById('inicio-op').value,
+    finOp: document.getElementById('fin-op').value,
+  };
+  localStorage.setItem('trazabilidadBuques', JSON.stringify(datos));
+}
+
+function cargarDatosGuardados() {
+  const datosGuardados = localStorage.getItem('trazabilidadBuques');
+  if (datosGuardados) {
+    const datos = JSON.parse(datosGuardados);
+    productos = datos.productos || [];
+    paradas = datos.paradas || [];
+    camiones = datos.camiones || [];
+    correa = datos.correa || [];
+    mecanizado = datos.mecanizado || [];
+    
+    document.getElementById('buque-nombre').value = datos.buqueNombre || '';
+    document.getElementById('buque-eta').value = datos.buqueEta || '';
+    document.getElementById('buque-nor').value = datos.buqueNor || '';
+    document.getElementById('buque-rata').value = datos.buqueRata || '';
+    document.getElementById('buque-condicion').value = datos.buqueCondicion || 'SHINC';
+    document.getElementById('buque-tm').value = datos.buqueTm || '';
+    document.getElementById('inicio-op').value = datos.inicioOp || '';
+    document.getElementById('fin-op').value = datos.finOp || '';
+    
+    renderProductos();
+    renderParadas();
+    renderCamiones();
+    renderCorrea();
+    renderTablaMec();
+    calcLaytime();
+    updateDashboard();
+  }
+}
+
+// ==== EXPORTAR A EXCEL ====
+function exportarTodoExcel() {
+  const wb = XLSX.utils.book_new();
+  
+  // Hoja 1: Información General
+  const infoGeneral = [[
+    'Nombre Buque', 'ETA', 'Fecha NOR', 'Rata Contratada', 'Condición', 
+    'Total Producto (TM)', 'Inicio Operación', 'Fin Operación', 'Laytime', 'Tiempo Operación'
+  ], [
+    document.getElementById('buque-nombre').value,
+    document.getElementById('buque-eta').value,
+    document.getElementById('buque-nor').value,
+    document.getElementById('buque-rata').value,
+    document.getElementById('buque-condicion').value,
+    document.getElementById('buque-tm').value,
+    document.getElementById('inicio-op').value,
+    document.getElementById('fin-op').value,
+    document.getElementById('laytime').innerText,
+    document.getElementById('tiempo-operacion').innerText
+  ]];
+  const wsInfo = XLSX.utils.aoa_to_sheet(infoGeneral);
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Información General');
+  
+  // Hoja 2: Productos
+  const productosData = [['Producto', 'Bodega', 'Declarado (TM)', 'Descargado (TM)', 'Usuario']];
+  productos.forEach(p => productosData.push([p.tipo, p.bodega, p.declarado, p.descargado, p.usuario || '']));
+  const wsProductos = XLSX.utils.aoa_to_sheet(productosData);
+  XLSX.utils.book_append_sheet(wb, wsProductos, 'Productos');
+  
+  // Hoja 3: Paradas
+  const paradasData = [['Motivo', 'Bodega', 'Inicio', 'Fin', 'Duración (h)', 'Usuario']];
+  paradas.forEach(p => {
+    let duracion = 0;
+    if(p.ini && p.fin) {
+      duracion = ((new Date(p.fin) - new Date(p.ini)) / 3600000).toFixed(2);
+    }
+    paradasData.push([p.motivo, p.bodega, p.ini, p.fin, duracion, p.usuario || '']);
+  });
+  const wsParadas = XLSX.utils.aoa_to_sheet(paradasData);
+  XLSX.utils.book_append_sheet(wb, wsParadas, 'Paradas');
+  
+  // Hoja 4: Camiones
+  const camionesData = [['No. Listado', 'Placa', 'Ficha', 'Estatus', 'Usuario']];
+  camiones.forEach(c => camionesData.push([c.nlist, c.placa, c.ficha, c.estatus, c.usuario || '']));
+  const wsCamiones = XLSX.utils.aoa_to_sheet(camionesData);
+  XLSX.utils.book_append_sheet(wb, wsCamiones, 'Camiones');
+  
+  // Hoja 5: Correa
+  const correaData = [['Línea', 'Producto', 'Toneladas', 'Hora', 'Usuario']];
+  correa.forEach(c => correaData.push([c.linea, c.prod, c.tn, c.hora, c.usuario || '']));
+  const wsCorrea = XLSX.utils.aoa_to_sheet(correaData);
+  XLSX.utils.book_append_sheet(wb, wsCorrea, 'Correa Mecanizada');
+  
+  // Hoja 6: Mecanizado
+  const mecData = [['Producto', 'Toneladas', 'Hora', 'Usuario']];
+  mecanizado.forEach(m => mecData.push([m.producto, m.tn, m.hora, m.usuario || '']));
+  const wsMec = XLSX.utils.aoa_to_sheet(mecData);
+  XLSX.utils.book_append_sheet(wb, wsMec, 'Mecanizado');
+  
+  // Hoja 7: Dashboard
+  const dashData = [
+    ['Métrica', 'Valor'],
+    ['Descarga Camión (TM)', document.getElementById('dsh-tot-camion').innerText],
+    ['Descarga Mecanizado (TM)', document.getElementById('dsh-tot-mec').innerText],
+    ['Total Global (TM)', document.getElementById('dsh-tot-total').innerText],
+    ['Tiempo Bruto (h)', document.getElementById('dsh-tiempo-bruto').innerText],
+    ['Tiempo Neto (h)', document.getElementById('dsh-tiempo-neto').innerText],
+    ['TPH Promedio', document.getElementById('dsh-tph').innerText],
+    ['Laytime Restante (h)', document.getElementById('dsh-laytime-rest').innerText]
+  ];
+  const wsDash = XLSX.utils.aoa_to_sheet(dashData);
+  XLSX.utils.book_append_sheet(wb, wsDash, 'Dashboard');
+  
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `Trazabilidad_Buques_Completo_${fecha}.xlsx`);
+}
+
+function exportarSeccion(seccion) {
+  const wb = XLSX.utils.book_new();
+  let data = [];
+  let nombre = '';
+  
+  switch(seccion) {
+    case 'info-general':
+      nombre = 'Información General';
+      data = [[
+        'Nombre Buque', 'ETA', 'Fecha NOR', 'Rata Contratada', 'Condición', 
+        'Total Producto (TM)', 'Inicio Operación', 'Fin Operación', 'Laytime', 'Tiempo Operación'
+      ], [
+        document.getElementById('buque-nombre').value,
+        document.getElementById('buque-eta').value,
+        document.getElementById('buque-nor').value,
+        document.getElementById('buque-rata').value,
+        document.getElementById('buque-condicion').value,
+        document.getElementById('buque-tm').value,
+        document.getElementById('inicio-op').value,
+        document.getElementById('fin-op').value,
+        document.getElementById('laytime').innerText,
+        document.getElementById('tiempo-operacion').innerText
+      ]];
+      break;
+    case 'productos':
+      nombre = 'Productos';
+      data = [['Producto', 'Bodega', 'Declarado (TM)', 'Descargado (TM)', 'Usuario']];
+      productos.forEach(p => data.push([p.tipo, p.bodega, p.declarado, p.descargado, p.usuario || '']));
+      break;
+    case 'paradas':
+      nombre = 'Paradas';
+      data = [['Motivo', 'Bodega', 'Inicio', 'Fin', 'Duración (h)', 'Usuario']];
+      paradas.forEach(p => {
+        let duracion = 0;
+        if(p.ini && p.fin) {
+          duracion = ((new Date(p.fin) - new Date(p.ini)) / 3600000).toFixed(2);
+        }
+        data.push([p.motivo, p.bodega, p.ini, p.fin, duracion, p.usuario || '']);
+      });
+      break;
+    case 'camiones':
+      nombre = 'Camiones';
+      data = [['No. Listado', 'Placa', 'Ficha', 'Estatus', 'Usuario']];
+      camiones.forEach(c => data.push([c.nlist, c.placa, c.ficha, c.estatus, c.usuario || '']));
+      break;
+    case 'correa':
+      nombre = 'Correa';
+      data = [['Línea', 'Producto', 'Toneladas', 'Hora', 'Usuario']];
+      correa.forEach(c => data.push([c.linea, c.prod, c.tn, c.hora, c.usuario || '']));
+      break;
+    case 'toneladas':
+      nombre = 'Mecanizado';
+      data = [['Producto', 'Toneladas', 'Hora', 'Usuario']];
+      mecanizado.forEach(m => data.push([m.producto, m.tn, m.hora, m.usuario || '']));
+      break;
+    case 'dashboard':
+      nombre = 'Dashboard';
+      data = [
+        ['Métrica', 'Valor'],
+        ['Descarga Camión (TM)', document.getElementById('dsh-tot-camion').innerText],
+        ['Descarga Mecanizado (TM)', document.getElementById('dsh-tot-mec').innerText],
+        ['Total Global (TM)', document.getElementById('dsh-tot-total').innerText],
+        ['Tiempo Bruto (h)', document.getElementById('dsh-tiempo-bruto').innerText],
+        ['Tiempo Neto (h)', document.getElementById('dsh-tiempo-neto').innerText],
+        ['TPH Promedio', document.getElementById('dsh-tph').innerText],
+        ['Laytime Restante (h)', document.getElementById('dsh-laytime-rest').innerText]
+      ];
+      break;
+  }
+  
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, nombre);
+  
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `${nombre}_${fecha}.xlsx`);
+}
+
 // ==== LAYTIME Y OPERACIÓN ====
 function calcLaytime() {
   const tm = parseFloat(document.getElementById('buque-tm').value) || 0;
@@ -896,9 +1340,10 @@ function calcLaytime() {
     laytimeHoras = 0;
   }
   ajustarLaytimeLluvia();
+  guardarDatos();
 }
 
-['buque-tm', 'buque-rata', 'buque-condicion'].forEach((id) => {
+['buque-tm', 'buque-rata', 'buque-condicion', 'buque-nombre', 'buque-eta', 'buque-nor'].forEach((id) => {
   document.getElementById(id).addEventListener('input', calcLaytime);
 });
 
@@ -933,6 +1378,7 @@ function calcOperacion() {
   document.getElementById(id).addEventListener('input', () => {
     calcOperacion();
     updateDashboard();
+    guardarDatos();
   });
 });
 
@@ -946,6 +1392,7 @@ function renderProductos() {
       <td>${p.bodega || ''}</td>
       <td><input type='number' min='0' style='width:70px' value='${p.declarado}' onchange='actProdDeclarado(${i}, this.value)'></td>
       <td><input type='number' min='0' style='width:70px' value='${p.descargado}' onchange='actProdDescargado(${i}, this.value)'></td>
+      <td><span class="user-badge">${p.usuario || ''}</span></td>
       <td><button type="button" onclick="eliminaProducto(${i})"><i class="fa fa-trash"></i></button></td>
     </tr>`;
   });
@@ -953,14 +1400,18 @@ function renderProductos() {
 
 function actProdDeclarado(idx, vl) {
   productos[idx].declarado = Number(vl);
+  productos[idx].usuario = currentUsername;
   renderProductos();
   updateDashboard();
+  guardarDatos();
 }
 
 function actProdDescargado(idx, vl) {
   productos[idx].descargado = Number(vl);
+  productos[idx].usuario = currentUsername;
   renderProductos();
   updateDashboard();
+  guardarDatos();
 }
 
 function agregarProducto() {
@@ -970,9 +1421,10 @@ function agregarProducto() {
     alert('Debe seleccionar producto y bodega');
     return;
   }
-  productos.push({ tipo: tipo, bodega: bodega, declarado: 0, descargado: 0 });
+  productos.push({ tipo: tipo, bodega: bodega, declarado: 0, descargado: 0, usuario: currentUsername });
   renderProductos();
   updateDashboard();
+  guardarDatos();
   document.getElementById('nuevo-producto-tipo').value = '';
   document.getElementById('nuevo-producto-bodega').value = '';
 }
@@ -982,6 +1434,7 @@ function eliminaProducto(idx) {
     productos.splice(idx, 1);
     renderProductos();
     updateDashboard();
+    guardarDatos();
   }
 }
 
@@ -993,10 +1446,11 @@ function registrarParada(e) {
   let ini = document.getElementById('parada-inicio').value;
   let fin = document.getElementById('parada-fin').value;
   
-  paradas.push({ motivo, bodega, ini, fin });
+  paradas.push({ motivo, bodega, ini, fin, usuario: currentUsername });
   renderParadas();
   ajustarLaytimeLluvia();
   updateDashboard();
+  guardarDatos();
   e.target.reset();
   return false;
 }
@@ -1017,6 +1471,7 @@ function renderParadas() {
       <td>${p.ini.replace('T', ' ')}</td>
       <td>${p.fin.replace('T', ' ')}</td>
       <td>${duration}</td>
+      <td><span class="user-badge">${p.usuario || ''}</span></td>
       <td><button type="button" onclick="eliminaParada(${i})"><i class="fa fa-trash"></i></button></td>
     </tr>`;
   });
@@ -1033,6 +1488,7 @@ function eliminaParada(idx) {
     renderParadas();
     ajustarLaytimeLluvia();
     updateDashboard();
+    guardarDatos();
   }
 }
 
@@ -1048,8 +1504,9 @@ function registrarCamion(e) {
     alert('Ya existe esa ficha o placa en ese listado');
     return false;
   }
-  camiones.push({ nlist, placa, ficha, estatus });
+  camiones.push({ nlist, placa, ficha, estatus, usuario: currentUsername });
   renderCamiones();
+  guardarDatos();
   e.target.reset();
   return false;
 }
@@ -1068,6 +1525,7 @@ function renderCamiones() {
       <td>${c.placa}</td>
       <td>${c.ficha}</td>
       <td><span class="status-badge ${c.estatus === 'Cargado' ? 'cargado' : 'no-cargado'}"><i class="fa ${icon}"></i> ${c.estatus}</span></td>
+      <td><span class="user-badge">${c.usuario || ''}</span></td>
       <td><button type="button" onclick="eliminaCamion(${idx})"><i class="fa fa-trash"></i></button></td>
     </tr>`;
   });
@@ -1080,6 +1538,7 @@ function eliminaCamion(idx) {
   if(confirm('¿Eliminar este camión?')) {
     camiones.splice(idx, 1);
     renderCamiones();
+    guardarDatos();
   }
 }
 
@@ -1095,9 +1554,10 @@ function registrarCorrea(e) {
   let tn = document.getElementById('correa-tn').value;
   let hora = document.getElementById('correa-hora').value;
   
-  correa.push({ linea, prod, tn: Number(tn), hora });
+  correa.push({ linea, prod, tn: Number(tn), hora, usuario: currentUsername });
   renderCorrea();
   updateDashboard();
+  guardarDatos();
   e.target.reset();
   return false;
 }
@@ -1111,6 +1571,7 @@ function renderCorrea() {
       <td>${c.prod}</td>
       <td>${c.tn}</td>
       <td>${c.hora.replace('T', ' ')}</td>
+      <td><span class="user-badge">${c.usuario || ''}</span></td>
       <td><button type="button" onclick="eliminaCorrea(${i})"><i class="fa fa-trash"></i></button></td>
     </tr>`;
   });
@@ -1123,6 +1584,7 @@ function eliminaCorrea(idx) {
     correa.splice(idx, 1);
     renderCorrea();
     updateDashboard();
+    guardarDatos();
   }
 }
 
@@ -1133,9 +1595,11 @@ function agregarLineaMec(e) {
     producto: document.getElementById('mec-producto').value,
     tn: Number(document.getElementById('mec-tn').value),
     hora: document.getElementById('mec-hora').value,
+    usuario: currentUsername
   });
   renderTablaMec();
   mostrarTonCamiones();
+  guardarDatos();
   e.target.reset();
   return false;
 }
@@ -1148,6 +1612,7 @@ function renderTablaMec() {
       <td>${m.producto}</td>
       <td>${m.tn}</td>
       <td>${m.hora}</td>
+      <td><span class="user-badge">${m.usuario || ''}</span></td>
       <td><button type="button" onclick="eliminaMec(${i})"><i class="fa fa-trash"></i></button></td>
     </tr>`;
   });
@@ -1159,6 +1624,7 @@ function eliminaMec(idx) {
     mecanizado.splice(idx, 1);
     renderTablaMec();
     mostrarTonCamiones();
+    guardarDatos();
   }
 }
 
