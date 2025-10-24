@@ -1,40 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Panel de Trazabilidad de Descarga de Buques</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<style>
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; margin: 0; color: #19324c;}
-header { background: #102842; color: white; padding: 1rem; display:flex; align-items: center;}
-header img {height:44px; margin-right:15px; border-radius:6px; background:#fff;}
-h1 { margin: 0.5rem; }
-.container { max-width: 1180px; margin: 2rem auto; padding: 1rem; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);}
-section { margin-bottom: 2rem;}
-.modulo { padding: 1.2rem 1rem; margin-bottom: 2rem; border: 1px solid #dbe3eb; border-radius: 12px; background: #f9fbfd;}
-label { font-weight: 500; }
-input, select, button, textarea { margin-top: 0.2rem; margin-bottom: 0.6rem; padding: 0.4rem; border-radius: 7px; border: 1px solid #ccd2db;}
-button { background: #28568d; color: #fff; cursor: pointer; border: none; transition: background 0.2s;}
-button:hover { background: #163357;}
-table { width: 100%; border-collapse: collapse; margin-top: 1rem;}
-th, td { border: 1px solid #c7d3e6; padding: 0.6rem; text-align: left;}
-th { background: #e7f0fa;}
-.flex-row { display: flex; gap: 1.5rem; flex-wrap: wrap;}
-.flex-col-2 { flex: 1 1 310px;}
-.summary { margin-top: 1rem; background: #e1eaf6; padding: 1rem; border-radius: 8px;}
-.dashboard-card { background: #e6eef7; margin: 0.5rem; border-radius: 7px; padding: 1rem;}
-.small { font-size: 0.88em; }
-.status-badge { padding: 0.2em 0.7em; border-radius: 6px; color: #fff; font-size: 0.96em;}
-.cargado { background: #13ae60;}
-.no-cargado {background: #ff5858;}
-input[type="file"] {border:none;}
-@media (max-width: 760px) {
-  .container {padding: 0.3rem;}
-  .flex-row {flex-direction: column;}
-  th, td { font-size:0.98em;}
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Panel de Trazabilidad de Descarga de Buques</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fa; margin: 0; color: #19324c;}
+    header { background: #102842; color: white; padding: 1rem; display:flex; align-items: center;}
+    header img {height:44px; margin-right:15px; border-radius:6px; background:#fff;}
+    h1 { margin: 0.5rem; }
+    .container { max-width: 1180px; margin: 2rem auto; padding: 1rem; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);}
+    section { margin-bottom: 2rem;}
+    .modulo { padding: 1.2rem 1rem; margin-bottom: 2rem; border: 1px solid #dbe3eb; border-radius: 12px; background: #f9fbfd;}
+    label { font-weight: 500; }
+    input, select, button, textarea { margin-top: 0.2rem; margin-bottom: 0.6rem; padding: 0.4rem; border-radius: 7px; border: 1px solid #ccd2db;}
+    button { background: #28568d; color: #fff; cursor: pointer; border: none; transition: background 0.2s;}
+    button:hover { background: #163357;}
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem;}
+    th, td { border: 1px solid #c7d3e6; padding: 0.6rem; text-align: left;}
+    th { background: #e7f0fa;}
+    .flex-row { display: flex; gap: 1.5rem; flex-wrap: wrap;}
+    .flex-col-2 { flex: 1 1 310px;}
+    .summary { margin-top: 1rem; background: #e1eaf6; padding: 1rem; border-radius: 8px;}
+    .dashboard-card { background: #e6eef7; margin: 0.5rem; border-radius: 7px; padding: 1rem;}
+    .small { font-size: 0.88em; }
+    .status-badge { padding: 0.2em 0.7em; border-radius: 6px; color: #fff; font-size: 0.96em;}
+    .cargado { background: #13ae60;}
+    .no-cargado {background: #ff5858;}
+    input[type="file"] {border:none;}
+    @media (max-width: 760px) {
+      .container {padding: 0.3rem;}
+      .flex-row {flex-direction: column;}
+      th, td { font-size:0.98em;}
+    }
+  </style>
 </head>
 <body>
 <header>
@@ -43,7 +43,6 @@ input[type="file"] {border:none;}
 </header>
 <div class="container">
 
-  <!-- Información general -->
   <section class="modulo" id="mod-info-general">
     <h2>Información General del Buque</h2>
     <div class="flex-row">
@@ -91,7 +90,6 @@ input[type="file"] {border:none;}
     </div>
   </section>
 
-  <!-- Productos manifestados/descargados -->
   <section class="modulo">
     <h2>Productos Manifestados</h2>
     <table id="tabla-productos">
@@ -105,7 +103,6 @@ input[type="file"] {border:none;}
     <button onclick="agregarProducto()">Agregar Producto</button>
   </section>
 
-  <!-- Registro de Paradas -->
   <section class="modulo">
     <h2>Registro de Paradas / Incidentes</h2>
     <form onsubmit="registrarParada(event)">
@@ -158,7 +155,6 @@ input[type="file"] {border:none;}
     <div class="summary"><b>Tiempo Total Paradas:</b> <span id="tiempo-paradas"></span></div>
   </section>
 
-  <!-- Tracking de Camiones -->
   <section class="modulo">
     <h2>Tracking de Camiones</h2>
     <form onsubmit="registrarCamion(event)">
@@ -209,7 +205,6 @@ input[type="file"] {border:none;}
     </div>
   </section>
 
-  <!-- Correa mecanizada -->
   <section class="modulo">
     <h2>Correa Mecanizada (por hora)</h2>
     <form onsubmit="registrarCorrea(event)">
@@ -251,7 +246,6 @@ input[type="file"] {border:none;}
     </div>
   </section>
 
-  <!-- TONELADAS CAMIONES: Importar archivo Excel y sumar totales -->
   <section class="modulo">
     <h2>TONELADAS CAMIONES</h2>
     <input type="file" id="import-camiones" accept=".xlsx,.xls"/>
@@ -261,13 +255,11 @@ input[type="file"] {border:none;}
     <canvas id="grafico-ton" height="120"></canvas>
   </section>
 
-  <!-- Total descargado -->
   <section class="modulo">
     <h2>Total Descargado</h2>
     <div class="summary" id="total-descargado"></div>
   </section>
 
-  <!-- Dashboard y resumen ejecutivo -->
   <section class="modulo">
     <h2>Dashboard y Resumen Ejecutivo</h2>
     <div class="dashboard-card"><span><b>Tiempo Bruto de Operación:</b> <span id="dsh-tiempo-bruto"></span></span></div>
@@ -279,10 +271,9 @@ input[type="file"] {border:none;}
       <canvas id="grafico-horas" height="120"></canvas>
     </div>
   </section>
-
 </div>
 <script>
-// ---- ESTADO Y VARIABLES
+// ==== ESTADO Y VARIABLES ====
 let productos = [], paradas=[], camiones=[], correa=[];
 let laytimeHoras = 0;
 // --- GENERAL LAYTIME Y OP
@@ -472,7 +463,7 @@ function updateGrafico(){
   ctx.fillStyle="#237acf";
   labels.forEach((h,i)=> ctx.fillRect(i*step-2, H-(vals[i]/maxV*0.8*H)-8,4,8));
 }
-// ---- TONELADAS CAMIONES IMPORT Y ANALISIS
+// ===== ARCHIVO TONELADAS CAMIONES EXACTO PARA TU FORMATO =====
 let dataImport = [], dataResumen = {}, horas = [];
 document.getElementById('import-camiones').addEventListener('change', function(evt){
   const file = evt.target.files[0];
@@ -486,17 +477,19 @@ document.getElementById('import-camiones').addEventListener('change', function(e
   };
   reader.readAsArrayBuffer(file);
 });
+// === FUNCION AJUSTADA A TU ARCHIVO BASE
 function procesarTonCamiones(sheet){
-  // Encuentra los encabezados
-  let hidx = 0;
-  let header = sheet[hidx];
-  // Detecta columnas: Producto y Peso Neto (t), Fecha Entrada
-  let idxProd = header.findIndex(h=>h.toLowerCase().includes("producto"));
-  let idxPeso = header.findIndex(h=>h.toLowerCase().includes("neto"));
-  let idxFecha = header.findIndex(h=>h.toLowerCase().includes("fecha"));
-  if(idxProd<0 || idxPeso<0 || idxFecha<0){document.getElementById('res-ton-camiones').innerHTML="No se detectan columnas válidas.";return;}
+  // Buscar fila encabezados reales (por ejemplo, una que tenga "Fecha Entrada"/"Producto"/"Peso Neto (t)")
+  let headerIdx = sheet.findIndex(row =>
+    row.includes("Fecha Entrada") && row.includes("Producto") && row.includes("Peso Neto (t)")
+  );
+  if(headerIdx==-1){document.getElementById('res-ton-camiones').innerHTML="No se detectan encabezados válidos.";return;}
+  let header = sheet[headerIdx];
+  let idxFecha = header.findIndex(h=>h==="Fecha Entrada");
+  let idxProd  = header.findIndex(h=>h==="Producto");
+  let idxPeso  = header.findIndex(h=>h==="Peso Neto (t)");
   let tabla = [];
-  for(let i=hidx+1;i<sheet.length;i++){
+  for(let i=headerIdx+1;i<sheet.length;i++){
     let row = sheet[i];
     if(!row[idxProd]||isNaN(parseFloat(row[idxPeso]))) continue;
     tabla.push({producto:row[idxProd], peso:parseFloat(row[idxPeso]), fecha:row[idxFecha]});
@@ -510,11 +503,10 @@ function limpiarTonCamiones(){
   document.getElementById('grafico-ton').getContext('2d').clearRect(0,0,600,120);
 }
 function mostrarTonCamiones(){
-  // Totales por producto
   let resumen = {}, resumenHora = {}, horasV = [];
   dataImport.forEach(r=>{
     let prod = r.producto, peso = r.peso;
-    let hora = r.fecha.split(' ')[1]?r.fecha.split(' ')[1].substring(0,5):"";
+    let hora = (r.fecha||'').split(' ')[1]?r.fecha.split(' ')[1].substring(0,5):"";
     resumen[prod] = (resumen[prod]||0)+peso;
     if(!resumenHora[hora]) resumenHora[hora] = {};
     resumenHora[hora][prod] = (resumenHora[hora][prod]||0)+peso;
@@ -524,7 +516,6 @@ function mostrarTonCamiones(){
   let html = "<table><thead><tr><th>Producto</th><th>Total camión</th></tr></thead><tbody>";
   for(let prod in resumen) html += `<tr><td>${prod}</td><td>${resumen[prod].toFixed(2)} TM</td></tr>`;
   html+="</tbody></table>";
-  // Máquina
   let tmMec = Number(document.getElementById('toneladas-mec').value) || 0;
   html += `<div style='margin-top:6px'><b>Total mecanizado:</b> ${tmMec.toFixed(2)} TM<br>`;
   let tmTot = Object.values(resumen).reduce((a,b)=>a+b,0)+tmMec;
@@ -540,7 +531,6 @@ function graficarTonCamiones(objHoras, tmMec){
   Object.values(objHoras).forEach(prods=>Object.keys(prods).forEach(p=>products[p]=true));
   let labels = horas;
   let colores = ["#28568d", "#bda25f", "#7da132", "#d48148", "#b97a7a"];
-  // Graficar barras por producto
   Object.keys(products).forEach((prod,pidx)=>{
     ctx.beginPath();
     ctx.strokeStyle = colores[pidx%colores.length];
