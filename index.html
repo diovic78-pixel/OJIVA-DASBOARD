@@ -1,11 +1,12 @@
-x	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel de Trazabilidad de Descarga de Buques</title>
+  <title>OJIVA GESTIÓN DESCARGA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary: #2355a4;
@@ -18,26 +19,50 @@ x	<!DOCTYPE html>
       --surface: #f9fbfd;
       --card: #e6eef7;
       --border: #dbe3eb;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
-      --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
+      --shadow: 0 2px 8px rgba(0,0,0,0.09);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
       --radius: 14px;
       --radius-sm: 8px;
       --radius-xs: 6px;
     }
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: "Segoe UI", Arial, sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0, #764ba2 100%);
       min-height: 100vh;
       color: #19324c;
       overflow-x: hidden;
     }
-    /* El resto de tus estilos aquí */
+    .header {
+      width: 100%; background: var(--primary);
+      color: #fff; padding: 1.5rem 2rem; display: flex;
+      align-items: center; gap: 1.2rem; position: sticky; top: 0; left: 0;
+      z-index: 1001; font-size: 1.5rem; box-shadow: var(--shadow);
+    }
+    .header .logo { font-size: 2rem; margin-right: 12px; }
+    .main-container { padding: 34px 18px 18px 18px; max-width: 1200px; margin: auto; }
+    .home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px,1fr)); gap: 2rem; margin-top: 2rem; }
+    .home-card {
+      background: var(--card); border-radius: var(--radius); padding:2rem 1.2rem 1.1rem 1.2rem;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: box-shadow 0.2s;
+    }
+    .home-card:hover { box-shadow: var(--shadow-lg); background: #ddeafb; }
+    .home-card i { font-size: 2.4rem; margin-bottom: 0.9rem; color: var(--primary); }
+    .view { display: none; }
+    .view.active { display: block; margin-top: 2rem; animation: fadeInView 0.7s; }
+    @keyframes fadeInView { from { opacity: 0; transform: translateY(40px);} to {opacity:1; transform:none;}}
+    .dashboard-grid { display: flex; flex-wrap: wrap; gap: 2.5rem; margin: 1.7rem 0 2.5rem; }
+    .dashboard-card {
+      background: var(--surface); border-radius: var(--radius-sm);
+      padding: 1.6rem 2rem; width: 340px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center;
+    }
+    .dashboard-card h4 { margin-bottom:0.7rem; font-size: 1.13rem; }
+    .card-table { margin:0.7rem 0 0.5rem; width:90%; border-collapse:collapse;}
+    .card-table th, .card-table td { padding: 0.23rem 0.5rem; border-bottom: 1px solid var(--border);}
+    .card-table th { text-align:left; color: var(--primary);}
+    .btn-main { padding:0.55rem 1.35rem; font-size:1rem; background:var(--primary); color:#fff; border:none; border-radius:var(--radius-xs); cursor:pointer;}
   </style>
-
-  <!-- Firebase core SDKs para web -->
+  <!-- FIREBASE SCRIPTS Y CONFIG -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script>
@@ -56,179 +81,201 @@ x	<!DOCTYPE html>
     let productos = [];
     let paradas = [];
     let camiones = [];
-    let correas = [];
-    let mecanizados = [];
-
+    let incidentes = [];
     let currentUsername = '';
+    // Aquí se cargarán otras variables globales.
   </script>
 </head>
 <body>
-  <!-- Modal Login -->
-  <div class="login-overlay" id="login-overlay" style="display:flex; justify-content:center; align-items:center; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10000;">
-    <div class="login-modal" style="background:#fff; padding:2rem; border-radius:14px; text-align:center; max-width:400px; width:90%;">
-      <h2>Iniciar Sesión</h2>
-      <input type="text" id="username" placeholder="Ingrese su nombre" style="width:100%; padding:0.5rem; margin-bottom:1rem;"/>
-      <button onclick="login()" style="padding:0.5rem 1rem; font-weight:bold; cursor:pointer;">Entrar</button>
+<!-- MODAL LOGIN -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-modal">
+    <h2>Bienvenido a Ojiva</h2>
+    <p style="font-size:1.1em;">Por favor, ingresa tu nombre de usuario para acceder</p>
+    <input type="text" id="username" placeholder="Ingresa tu nombre..." style="width:100%; padding:0.5rem; margin-bottom:1rem;"/>
+    <button onclick="login()" class="btn-main">Entrar</button>
+  </div>
+</div>
+<!-- HEADER VISUAL -->
+<div class="header">
+  <span class="logo"><i class="fa-solid fa-ship"></i></span>
+  OJIVA GESTIÓN DESCARGA
+</div>
+  
+<div class="main-container" id="main-container">
+  <!-- MENÚ PRINCIPAL INICIO -->
+  <div id="home-menu" class="home-cards">
+    <div class="home-card" onclick="mostrarVista('productos-view')">
+      <i class="fa-solid fa-boxes-stacked"></i>
+      <span>Productos Manifestados</span>
+    </div>
+    <div class="home-card" onclick="mostrarVista('paradas-view')">
+      <i class="fa-solid fa-stopwatch"></i>
+      <span>Registro de Paradas</span>
+    </div>
+    <div class="home-card" onclick="mostrarVista('camiones-view')">
+      <i class="fa-solid fa-truck"></i>
+      <span>Camiones</span>
+    </div>
+    <div class="home-card" onclick="mostrarVista('incidentes-view')">
+      <i class="fa-solid fa-exclamation-triangle"></i>
+      <span>Incidentes</span>
+    </div>
+    <div class="home-card" onclick="mostrarVista('dashboard-view')">
+      <i class="fa-solid fa-chart-simple"></i>
+      <span>Dashboard / Reportes</span>
+    </div>
+   </div>
+  <div id="productos-view" class="view">
+  <h2>Productos Manifestados</h2>
+  <select id="nuevo-producto-tipo">
+    <option value="">Seleccione producto...</option>
+    <option value="Maz Americano">Maz Americano</option>
+    <option value="Maz Argentino">Maz Argentino</option>
+    <option value="Maz Brasileo">Maz Brasileo</option>
+  </select>
+  <select id="nuevo-producto-bodega">
+    <option value="">Seleccione bodega...</option>
+    <option value="1">Bodega 1</option>
+    <option value="2">Bodega 2</option>
+  </select>
+  <button onclick="agregarProducto()" class="btn-main">Agregar Producto</button>
+  <ul id="lista-productos"></ul>
+</div>
+
+<div id="paradas-view" class="view">
+  <h2>Registro de Paradas</h2>
+  <button onclick="agregarParada()" class="btn-main">Agregar Parada</button>
+  <ul id="lista-paradas"></ul>
+</div>
+
+<div id="camiones-view" class="view">
+  <h2>Tracking de Camiones</h2>
+  <button onclick="agregarCamion()" class="btn-main">Agregar Camión</button>
+  <ul id="lista-camiones"></ul>
+</div>
+
+<div id="incidentes-view" class="view">
+  <h2>Registro de Incidentes</h2>
+  <textarea id="descripcion-incidente" placeholder="Describa el incidente..." rows="4" style="width: 100%; margin-bottom: 10px;"></textarea>
+  <button onclick="agregarIncidente()" class="btn-main">Registrar Incidente</button>
+  <ul id="lista-incidentes"></ul>
+</div>
+
+<div id="dashboard-view" class="view">
+  <h2>Dashboard / Reportes</h2>
+  <div class="dashboard-grid">
+    <div class="dashboard-card">
+      <h4>Productos Declarados</h4>
+      <canvas id="graficoProductos" width="300" height="150"></canvas>
+    </div>
+    <div class="dashboard-card">
+      <h4>Paradas por Usuario</h4>
+      <canvas id="graficoParadas" width="300" height="150"></canvas>
     </div>
   </div>
-  
-  <!-- Main Content -->
-  <div id="app-content" style="display:none;">
-    <!-- Productos manifestados -->
-    <section>
-      <h3>Productos Manifestados</h3>
-      <select id="nuevo-producto-tipo">
-        <option value="">Seleccione producto...</option>
-        <option value="Maz Americano">Maz Americano</option>
-        <option value="Maz Argentino">Maz Argentino</option>
-        <option value="Maz Brasileo">Maz Brasileo</option>
-        <option value="DNS">DNS</option>
-        <!-- El resto de productos -->
-      </select>
-      <select id="nuevo-producto-bodega">
-        <option value="">Seleccione bodega...</option>
-        <option value="1">Bodega 1</option>
-        <option value="2">Bodega 2</option>
-        <!-- El resto de bodegas -->
-      </select>
-      <button onclick="agregarProducto()">Agregar Producto</button>
-      <ul id="lista-productos"></ul>
-    </section>
-
-    <!-- Paradas -->
-    <section>
-      <h3>Registro de Paradas</h3>
-      <button onclick="agregarParada()">Agregar Parada</button>
-      <ul id="lista-paradas"></ul>
-    </section>
-
-    <!-- Camiones -->
-    <section>
-      <h3>Tracking de Camiones</h3>
-      <button onclick="agregarCamion()">Agregar Camión</button>
-      <ul id="lista-camiones"></ul>
-    </section>
-    
-    <!-- Agrega sección correas y mecanizados similares -->
-  </div>
-
-  <script>
-    function login() {
-      const input = document.getElementById('username').value.trim();
-      if (!input) {
-        alert('Por favor ingresa tu nombre');
-        return;
-      }
-      currentUsername = input;
-      document.getElementById('login-overlay').style.display = 'none';
-      document.getElementById('app-content').style.display = 'block';
-      cargarProductosDesdeFirebase();
-      cargarParadasDesdeFirebase();
-      cargarCamionesDesdeFirebase();
-      // Carga correas, mecanizados...
-    }
-
-    // Funciones productos
-    function agregarProducto() {
-      const tipo = document.getElementById('nuevo-producto-tipo').value;
-      const bodega = document.getElementById('nuevo-producto-bodega').value;
-      if (!tipo || !bodega) {
-        alert('Debe seleccionar producto y bodega');
-        return;
-      }
-      db.collection('productos').add({
-        tipo, bodega, declarado: 0, descargado: 0,
-        usuario: currentUsername,
-        creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => alert('Producto guardado!'));
-    }
-
-    function cargarProductosDesdeFirebase() {
-      db.collection('productos')
-        .orderBy('creadoEn', 'desc')
-        .onSnapshot(snapshot => {
-          productos = [];
-          snapshot.forEach(doc => productos.push({...doc.data(), id: doc.id}));
-          renderProductos();
-        });
-    }
-
-    function renderProductos() {
-      const ul = document.getElementById('lista-productos');
-      ul.innerHTML = '';
-      productos.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `${p.tipo} - ${p.bodega} (Declarado: ${p.declarado}, Descargado: ${p.descargado})`;
-        ul.appendChild(li);
-      });
-    }
-
-    // Funciones paradas
-    function agregarParada() {
-      db.collection('paradas').add({
-        usuario: currentUsername,
-        creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => alert('Parada registrada!'));
-    }
-
-    function cargarParadasDesdeFirebase() {
-      db.collection('paradas')
-        .orderBy('creadoEn', 'desc')
-        .onSnapshot(snapshot => {
-          paradas = [];
-          snapshot.forEach(doc => paradas.push({...doc.data(), id: doc.id}));
-          renderParadas();
-        });
-    }
-
-    function renderParadas() {
-      const ul = document.getElementById('lista-paradas');
-      ul.innerHTML = '';
-      paradas.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `Parada: ${p.usuario} - ${p.creadoEn?.toDate()}`;
-        ul.appendChild(li);
-      });
-    }
-
-    // Funciones camiones (similar)
-    function agregarCamion() {
-      db.collection('camiones').add({
-        usuario: currentUsername,
-        creadoEn: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => alert('Camión registrado!'));
-    }
-
-    function cargarCamionesDesdeFirebase() {
-      db.collection('camiones')
-        .orderBy('creadoEn', 'desc')
-        .onSnapshot(snapshot => {
-          camiones = [];
-          snapshot.forEach(doc => camiones.push({...doc.data(), id: doc.id}));
-          renderCamiones();
-        });
-    }
-
-    function renderCamiones() {
-      const ul = document.getElementById('lista-camiones');
-      ul.innerHTML = '';
-      camiones.forEach(c => {
-        const li = document.createElement('li');
-        li.textContent = `Camión: ${c.usuario} - ${c.creadoEn?.toDate()}`;
-        ul.appendChild(li);
-      });
-    }
-
-  </script>
-<!-- Botón para exportar a Excel -->
-<button id="btnExportExcel">Exportar a Excel</button>
+</div>
 
 <script>
-  // Función para exportar datos a Excel usando SheetJS
+  function mostrarVista(id) {
+    document.querySelectorAll('.view').forEach(view => {
+      view.classList.remove('active');
+    });
+    document.getElementById(id).classList.add('active');
+  }
+
+  function agregarIncidente() {
+    const descripcion = document.getElementById('descripcion-incidente').value.trim();
+    if (!descripcion) {
+      alert('Por favor, describa el incidente');
+      return;
+    }
+    db.collection('incidentes').add({
+      descripcion,
+      usuario: currentUsername,
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert('Incidente registrado!');
+      document.getElementById('descripcion-incidente').value = '';
+      cargarIncidentesDesdeFirebase();
+    });
+  }
+
+  function cargarIncidentesDesdeFirebase() {
+    db.collection('incidentes')
+      .orderBy('creadoEn', 'desc')
+      .onSnapshot(snapshot => {
+        incidentes = [];
+        snapshot.forEach(doc => incidentes.push({...doc.data(), id: doc.id}));
+        renderIncidentes();
+      });
+  }
+
+  function renderIncidentes() {
+    const ul = document.getElementById('lista-incidentes');
+    ul.innerHTML = '';
+    incidentes.forEach(inc => {
+      const li = document.createElement('li');
+      li.textContent = `${inc.descripcion} - por ${inc.usuario} en ${inc.creadoEn?.toDate()}`;
+      ul.appendChild(li);
+    });
+  }
+
+  function actualizarGraficos() {
+    crearGraficoProductos();
+    crearGraficoParadas();
+  }
+
+  function crearGraficoProductos() {
+    const ctx = document.getElementById('graficoProductos').getContext('2d');
+    const tipos = [...new Set(productos.map(p => p.tipo))];
+    const cantidades = tipos.map(tipo => productos.filter(p => p.tipo === tipo).reduce((sum, p) => sum + (p.declarado || 0), 0));
+    if (window.chartProductos) window.chartProductos.destroy();
+
+    window.chartProductos = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: tipos,
+        datasets: [{
+          label: 'Productos Declarados',
+          data: cantidades,
+          backgroundColor: '#2355a4'
+        }]
+      }
+    });
+  }
+
+  function crearGraficoParadas() {
+    const ctx = document.getElementById('graficoParadas').getContext('2d');
+    const usuarios = [...new Set(paradas.map(p => p.usuario))];
+    const cantidades = usuarios.map(usuario => paradas.filter(p => p.usuario === usuario).length);
+    if (window.chartParadas) window.chartParadas.destroy();
+
+    window.chartParadas = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: usuarios,
+        datasets: [{
+          label: 'Paradas por usuario',
+          data: cantidades,
+          backgroundColor: ['#2355a4', '#3498db', '#27ae60', '#e74c3c', '#f39c12']
+        }]
+      }
+    });
+  }
+
+  // Inicializa views ocultas y mostrar home
+  document.addEventListener('DOMContentLoaded', () => {
+    mostrarVista('home-menu');
+  });
+
+</script>
+<button id="btnExportExcel" class="btn-main" style="margin: 1rem 0;">Exportar a Excel</button>
+
+<script>
   function exportToExcel() {
     let wb = XLSX.utils.book_new();
-    
-    // Exportar productos
+
     let wsProductos = XLSX.utils.json_to_sheet(productos.map(p => ({
       tipo: p.tipo,
       bodega: p.bodega,
@@ -239,21 +286,18 @@ x	<!DOCTYPE html>
     })));
     XLSX.utils.book_append_sheet(wb, wsProductos, "Productos");
 
-    // Exportar paradas
     let wsParadas = XLSX.utils.json_to_sheet(paradas.map(p => ({
       usuario: p.usuario,
       creadoEn: p.creadoEn ? new Date(p.creadoEn.seconds * 1000).toLocaleString() : ''
     })));
     XLSX.utils.book_append_sheet(wb, wsParadas, "Paradas");
 
-    // Exportar camiones
     let wsCamiones = XLSX.utils.json_to_sheet(camiones.map(c => ({
       usuario: c.usuario,
       creadoEn: c.creadoEn ? new Date(c.creadoEn.seconds * 1000).toLocaleString() : ''
     })));
     XLSX.utils.book_append_sheet(wb, wsCamiones, "Camiones");
 
-    // Exportar incidentes
     let wsIncidentes = XLSX.utils.json_to_sheet(incidentes.map(i => ({
       descripcion: i.descripcion,
       usuario: i.usuario,
@@ -266,94 +310,12 @@ x	<!DOCTYPE html>
 
   document.getElementById("btnExportExcel").addEventListener("click", exportToExcel);
 </script>
-<!-- Contenedor Dashboard -->
-<div id="dashboard">
-  <h2>Dashboard</h2>
-  <canvas id="graficoProductos" width="400" height="200"></canvas>
-  <canvas id="graficoParadas" width="400" height="200"></canvas>
-  <!-- Más gráficos según necesites -->
-</div>
 
-<!-- Incluye Chart.js para gráficas -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-  let chartProductos, chartParadas;
-
-  function crearGraficoProductos() {
-    const ctx = document.getElementById('graficoProductos').getContext('2d');
-    const tipos = [...new Set(productos.map(p => p.tipo))];
-    const cantidades = tipos.map(tipo => 
-      productos.filter(p => p.tipo === tipo).reduce((sum, p) => sum + (p.declarado || 0), 0)
-    );
-    if(chartProductos) chartProductos.destroy();
-
-    chartProductos = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: tipos,
-        datasets: [{
-          label: 'Productos Declarados',
-          data: cantidades,
-          backgroundColor: '#2355a4'
-        }]
-      },
-      options: {}
-    });
-  }
-
-  function crearGraficoParadas() {
-    const ctx2 = document.getElementById('graficoParadas').getContext('2d');
-    const usuarios = [...new Set(paradas.map(p => p.usuario))];
-    const cantidades = usuarios.map(usuario =>
-      paradas.filter(p => p.usuario === usuario).length
-    );
-    if(chartParadas) chartParadas.destroy();
-
-    chartParadas = new Chart(ctx2, {
-      type: 'pie',
-      data: {
-        labels: usuarios,
-        datasets: [{
-          label: 'Paradas por usuario',
-          data: cantidades,
-          backgroundColor: ['#2355a4', '#3498db', '#27ae60', '#e74c3c', '#f39c12']
-        }]
-      },
-      options: {}
-    });
-  }
-
-  // Actualizar gráficos al cargar datos
-  function actualizarGraficos() {
-    crearGraficoProductos();
-    crearGraficoParadas();
-    // Más gráficos...
-  }
-
-  // Llamar actualización cuando se cargan datos
-  function renderProductos() {
-    const ul = document.getElementById('lista-productos');
-    ul.innerHTML = '';
-    productos.forEach(p => {
-      const li = document.createElement('li');
-      li.textContent = `${p.tipo} - ${p.bodega} (Declarado: ${p.declarado}, Descargado: ${p.descargado})`;
-      ul.appendChild(li);
-    });
-    actualizarGraficos();
-  }
-
-  function renderParadas() {
-    const ul = document.getElementById('lista-paradas');
-    ul.innerHTML = '';
-    paradas.forEach(p => {
-      const li = document.createElement('li');
-      li.textContent = `Parada: ${p.usuario} - ${p.creadoEn?.toDate()}`;
-      ul.appendChild(li);
-    });
-    actualizarGraficos();
-  }
-
-</script>
+<!-- CIERRE DE CONTENEDORES PRINCIPALES -->
+</div>  <!-- Cierra main-container -->
 </body>
 </html>
+
+
+
+
