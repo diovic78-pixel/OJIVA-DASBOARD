@@ -5,6 +5,7 @@
   <title>Panel de Trazabilidad de Descarga de Buques</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -565,6 +566,44 @@
       font-weight: 500;
       margin-left: 0.5rem;
     }
+
+    .ship-manager {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      background: var(--white);
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .ship-manager label {
+      margin-bottom: 0;
+      font-weight: 700;
+      color: var(--primary);
+      min-width: 120px;
+    }
+
+    .ship-manager select {
+      flex: 1;
+      min-width: 220px;
+      margin-bottom: 0;
+    }
+
+    .ship-manager .ship-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .ship-badge {
+      background: rgba(255,255,255,0.18);
+      padding: 0.45rem 0.8rem;
+      border-radius: var(--radius-xs);
+      font-weight: 600;
+    }
     
     /* Responsive */
     @media (max-width: 768px) {
@@ -614,6 +653,7 @@
     <div class="user-info">
       <i class="fas fa-user"></i>
       <span id="currentUser"></span>
+      <span id="buqueActivoLabel" class="ship-badge">Sin buque</span>
     </div>
     <button class="export-button" onclick="exportarTodoExcel()">
       <i class="fas fa-file-excel"></i> Exportar Todo a Excel
@@ -628,6 +668,14 @@
 </header>
 
 <div class="main-container">
+  <div class="ship-manager">
+    <label for="selector-buque"><i class="fas fa-ship"></i> Buque activo:</label>
+    <select id="selector-buque"></select>
+    <div class="ship-actions">
+      <button type="button" onclick="crearNuevoBuque()"><i class="fas fa-plus-circle"></i> Nuevo buque</button>
+      <button type="button" class="icon-btn" onclick="renombrarBuqueActivo()"><i class="fas fa-pen"></i> Renombrar</button>
+    </div>
+  </div>
   
   <!-- HOME VIEW -->
   <div id="home" class="view active">
@@ -753,6 +801,9 @@
           <option value="DNS">DNS</option>
           <option value="HRW">HRW</option>
           <option value="SRW">SRW</option>
+          <option value="Harina de Soya Americana">Harina de Soya Americana</option>
+          <option value="Harina de soya suramericana">Harina de soya suramericana</option>
+          <option value="Aceite de Soya">Aceite de Soya</option>
           <option value="Frijol">Frijol</option>
           <option value="Cascarilla">Cascarilla</option>
           <option value="Aceite de Palma">Aceite de Palma</option>
@@ -1074,6 +1125,39 @@
         <span><b>Laytime Restante:</b></span>
         <span class="kpi-value" id="dsh-laytime-rest">0 h</span>
       </div>
+      <div class="dashboard-card">
+        <i class="fa fa-layer-group kpi-icon"></i>
+        <span><b>Consolidado de Buques:</b></span>
+        <span class="kpi-value" id="dsh-consolidado-buques">0 buques</span>
+      </div>
+      <div class="summary">
+        <h3 style="margin-bottom: 1rem;"><i class="fa fa-table"></i> Consolidado General por Buque</h3>
+        <table id="tabla-consolidado-buques">
+          <thead>
+            <tr>
+              <th>Buque</th>
+              <th>Total Descargado (TM)</th>
+              <th>TPH</th>
+              <th>Camión (TM)</th>
+              <th>Mecanizado (TM)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-consolidado-buques"></tbody>
+        </table>
+        <div style="margin-top: 1rem; font-weight: 700; color: var(--primary);">
+          Consolidado total: <span id="consolidado-total-general">0.00</span> TM
+        </div>
+      </div>
+
+      <div class="summary" style="margin-top: 1.5rem;">
+        <h3 style="margin-bottom: 1rem;"><i class="fa fa-chart-bar"></i> Toneladas descargadas por buque</h3>
+        <canvas id="chart-toneladas-buque" height="120"></canvas>
+      </div>
+
+      <div class="summary" style="margin-top: 1.5rem;">
+        <h3 style="margin-bottom: 1rem;"><i class="fa fa-chart-line"></i> Velocidad TPH por buque</h3>
+        <canvas id="chart-tph-buque" height="120"></canvas>
+      </div>
     </div>
   </div>
 
@@ -1119,65 +1203,362 @@ function showView(viewId) {
   
   setTimeout(() => {
     document.getElementById(viewId).classList.add('active');
+    if (viewId === 'dashboard') {
+      setTimeout(() => {
+        updateDashboard();
+        if (chartToneladasBuque) chartToneladasBuque.resize();
+        if (chartTphBuque) chartTphBuque.resize();
+      }, 150);
+    }
   }, 100);
 }
 
 // ==== VARIABLES GLOBALES ====
+const STORAGE_KEY = 'trazabilidadBuquesMulti';
 let productos = [], paradas = [], camiones = [], correa = [], mecanizado = [];
 let laytimeHoras = 0, laytimeAdjusted = 0;
 let dataImport = [], dataResumen = {}, horas = [];
 let tiempoBruto = 0, tiempoParadas = 0, tiempoLluvia = 0;
+let ultimoResumenGlobal = { tc: 0, tm: 0, total: 0 };
+let sistemaBuques = { activo: null, contador: 0, buques: {} };
+let chartToneladasBuque = null, chartTphBuque = null;
+
+function crearEstructuraBuque(nombre = '') {
+  return {
+    nombre: nombre || '',
+    eta: '',
+    nor: '',
+    rata: '',
+    condicion: 'SHINC',
+    tm: '',
+    inicioOp: '',
+    finOp: '',
+    productos: [],
+    paradas: [],
+    camiones: [],
+    correa: [],
+    mecanizado: [],
+    dataImport: [],
+    dataResumen: {},
+    horas: [],
+    ultimoResumenGlobal: { tc: 0, tm: 0, total: 0 }
+  };
+}
+
+function obtenerNombreBuqueVisible(idBuque, dataBuque) {
+  const nombre = (dataBuque?.nombre || '').trim();
+  return nombre || `Buque ${idBuque.replace('buque_', '')}`;
+}
+
+function actualizarSelectorBuques() {
+  const selector = document.getElementById('selector-buque');
+  selector.innerHTML = '';
+
+  Object.keys(sistemaBuques.buques).forEach(idBuque => {
+    const option = document.createElement('option');
+    option.value = idBuque;
+    option.textContent = obtenerNombreBuqueVisible(idBuque, sistemaBuques.buques[idBuque]);
+    selector.appendChild(option);
+  });
+
+  if (sistemaBuques.activo) selector.value = sistemaBuques.activo;
+  actualizarEtiquetaBuqueActivo();
+}
+
+function actualizarEtiquetaBuqueActivo() {
+  const label = document.getElementById('buqueActivoLabel');
+  if (!sistemaBuques.activo || !sistemaBuques.buques[sistemaBuques.activo]) {
+    label.innerText = 'Sin buque';
+    return;
+  }
+  label.innerText = obtenerNombreBuqueVisible(sistemaBuques.activo, sistemaBuques.buques[sistemaBuques.activo]);
+}
+
+function limpiarFormularioGeneral() {
+  document.getElementById('buque-nombre').value = '';
+  document.getElementById('buque-eta').value = '';
+  document.getElementById('buque-nor').value = '';
+  document.getElementById('buque-rata').value = '';
+  document.getElementById('buque-condicion').value = 'SHINC';
+  document.getElementById('buque-tm').value = '';
+  document.getElementById('inicio-op').value = '';
+  document.getElementById('fin-op').value = '';
+}
+
+function sincronizarBuqueActivoDesdePantalla() {
+  if (!sistemaBuques.activo || !sistemaBuques.buques[sistemaBuques.activo]) return;
+
+  const buque = sistemaBuques.buques[sistemaBuques.activo];
+  buque.nombre = document.getElementById('buque-nombre').value;
+  buque.eta = document.getElementById('buque-eta').value;
+  buque.nor = document.getElementById('buque-nor').value;
+  buque.rata = document.getElementById('buque-rata').value;
+  buque.condicion = document.getElementById('buque-condicion').value;
+  buque.tm = document.getElementById('buque-tm').value;
+  buque.inicioOp = document.getElementById('inicio-op').value;
+  buque.finOp = document.getElementById('fin-op').value;
+  buque.productos = JSON.parse(JSON.stringify(productos));
+  buque.paradas = JSON.parse(JSON.stringify(paradas));
+  buque.camiones = JSON.parse(JSON.stringify(camiones));
+  buque.correa = JSON.parse(JSON.stringify(correa));
+  buque.mecanizado = JSON.parse(JSON.stringify(mecanizado));
+  buque.dataImport = JSON.parse(JSON.stringify(dataImport));
+  buque.dataResumen = JSON.parse(JSON.stringify(dataResumen));
+  buque.horas = JSON.parse(JSON.stringify(horas));
+  buque.ultimoResumenGlobal = JSON.parse(JSON.stringify(ultimoResumenGlobal));
+}
+
+function cargarBuqueActivoEnPantalla() {
+  if (!sistemaBuques.activo || !sistemaBuques.buques[sistemaBuques.activo]) return;
+
+  const buque = sistemaBuques.buques[sistemaBuques.activo];
+  document.getElementById('buque-nombre').value = buque.nombre || '';
+  document.getElementById('buque-eta').value = buque.eta || '';
+  document.getElementById('buque-nor').value = buque.nor || '';
+  document.getElementById('buque-rata').value = buque.rata || '';
+  document.getElementById('buque-condicion').value = buque.condicion || 'SHINC';
+  document.getElementById('buque-tm').value = buque.tm || '';
+  document.getElementById('inicio-op').value = buque.inicioOp || '';
+  document.getElementById('fin-op').value = buque.finOp || '';
+
+  productos = JSON.parse(JSON.stringify(buque.productos || []));
+  paradas = JSON.parse(JSON.stringify(buque.paradas || []));
+  camiones = JSON.parse(JSON.stringify(buque.camiones || []));
+  correa = JSON.parse(JSON.stringify(buque.correa || []));
+  mecanizado = JSON.parse(JSON.stringify(buque.mecanizado || []));
+  dataImport = JSON.parse(JSON.stringify(buque.dataImport || []));
+  dataResumen = JSON.parse(JSON.stringify(buque.dataResumen || {}));
+  horas = JSON.parse(JSON.stringify(buque.horas || []));
+  ultimoResumenGlobal = JSON.parse(JSON.stringify(buque.ultimoResumenGlobal || { tc: 0, tm: 0, total: 0 }));
+
+  renderProductos();
+  renderParadas();
+  renderCamiones();
+  renderCorrea();
+  renderTablaMec();
+  mostrarTonCamiones();
+  calcLaytime();
+  calcOperacion();
+  updateDashboard();
+  actualizarSelectorBuques();
+}
+
+function cambiarBuqueActivo(idBuque) {
+  if (!sistemaBuques.buques[idBuque]) return;
+  sincronizarBuqueActivoDesdePantalla();
+  sistemaBuques.activo = idBuque;
+  cargarBuqueActivoEnPantalla();
+  guardarDatos();
+}
+
+function crearNuevoBuque() {
+  sincronizarBuqueActivoDesdePantalla();
+  sistemaBuques.contador += 1;
+  const idBuque = `buque_${sistemaBuques.contador}`;
+  sistemaBuques.buques[idBuque] = crearEstructuraBuque(`Buque ${sistemaBuques.contador}`);
+  sistemaBuques.activo = idBuque;
+  limpiarFormularioGeneral();
+  productos = []; paradas = []; camiones = []; correa = []; mecanizado = [];
+  dataImport = []; dataResumen = {}; horas = []; ultimoResumenGlobal = { tc: 0, tm: 0, total: 0 };
+  cargarBuqueActivoEnPantalla();
+  guardarDatos();
+}
+
+function renombrarBuqueActivo() {
+  if (!sistemaBuques.activo) return;
+  const actual = obtenerNombreBuqueVisible(sistemaBuques.activo, sistemaBuques.buques[sistemaBuques.activo]);
+  const nuevoNombre = prompt('Escribe el nombre del buque activo:', actual);
+  if (nuevoNombre === null) return;
+  sistemaBuques.buques[sistemaBuques.activo].nombre = nuevoNombre.trim() || actual;
+  document.getElementById('buque-nombre').value = sistemaBuques.buques[sistemaBuques.activo].nombre;
+  actualizarSelectorBuques();
+  guardarDatos();
+}
+
+document.getElementById('selector-buque').addEventListener('change', function() {
+  cambiarBuqueActivo(this.value);
+});
 
 // ==== GUARDAR Y CARGAR DATOS (LocalStorage) ====
 function guardarDatos() {
-  const datos = {
-    productos, paradas, camiones, correa, mecanizado,
-    buqueNombre: document.getElementById('buque-nombre').value,
-    buqueEta: document.getElementById('buque-eta').value,
-    buqueNor: document.getElementById('buque-nor').value,
-    buqueRata: document.getElementById('buque-rata').value,
-    buqueCondicion: document.getElementById('buque-condicion').value,
-    buqueTm: document.getElementById('buque-tm').value,
-    inicioOp: document.getElementById('inicio-op').value,
-    finOp: document.getElementById('fin-op').value,
-  };
-  localStorage.setItem('trazabilidadBuques', JSON.stringify(datos));
+  sincronizarBuqueActivoDesdePantalla();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sistemaBuques));
 }
 
 function cargarDatosGuardados() {
-  const datosGuardados = localStorage.getItem('trazabilidadBuques');
+  const datosGuardados = localStorage.getItem(STORAGE_KEY);
+
   if (datosGuardados) {
-    const datos = JSON.parse(datosGuardados);
-    productos = datos.productos || [];
-    paradas = datos.paradas || [];
-    camiones = datos.camiones || [];
-    correa = datos.correa || [];
-    mecanizado = datos.mecanizado || [];
-    
-    document.getElementById('buque-nombre').value = datos.buqueNombre || '';
-    document.getElementById('buque-eta').value = datos.buqueEta || '';
-    document.getElementById('buque-nor').value = datos.buqueNor || '';
-    document.getElementById('buque-rata').value = datos.buqueRata || '';
-    document.getElementById('buque-condicion').value = datos.buqueCondicion || 'SHINC';
-    document.getElementById('buque-tm').value = datos.buqueTm || '';
-    document.getElementById('inicio-op').value = datos.inicioOp || '';
-    document.getElementById('fin-op').value = datos.finOp || '';
-    
-    renderProductos();
-    renderParadas();
-    renderCamiones();
-    renderCorrea();
-    renderTablaMec();
-    calcLaytime();
-    updateDashboard();
+    try {
+      const datos = JSON.parse(datosGuardados);
+      if (datos && datos.buques && Object.keys(datos.buques).length) {
+        sistemaBuques = {
+          activo: datos.activo || Object.keys(datos.buques)[0],
+          contador: datos.contador || Object.keys(datos.buques).length,
+          buques: datos.buques
+        };
+      }
+    } catch (error) {
+      console.error('Error cargando datos guardados:', error);
+    }
   }
+
+  if (!sistemaBuques.activo || !sistemaBuques.buques[sistemaBuques.activo]) {
+    sistemaBuques = { activo: null, contador: 0, buques: {} };
+    crearNuevoBuque();
+    return;
+  }
+
+  cargarBuqueActivoEnPantalla();
+}
+
+function obtenerToneladasCamionBuque(dataBuque) {
+  return (dataBuque.camiones || []).reduce((acc, camion) => {
+    const ficha = parseFloat(camion.ficha);
+    return acc + (isNaN(ficha) ? 0 : ficha);
+  }, 0);
+}
+
+function obtenerToneladasMecanizadoBuque(dataBuque) {
+  return (dataBuque.mecanizado || []).reduce((acc, item) => acc + (parseFloat(item.tn) || 0), 0);
+}
+
+function obtenerTiempoParadasBuque(dataBuque) {
+  return (dataBuque.paradas || []).reduce((acc, parada) => {
+    if (!parada.ini || !parada.fin) return acc;
+    return acc + ((new Date(parada.fin) - new Date(parada.ini)) / 3600000 || 0);
+  }, 0);
+}
+
+function obtenerTiempoBrutoBuque(dataBuque) {
+  if (!dataBuque.inicioOp || !dataBuque.finOp) return 0;
+  return (new Date(dataBuque.finOp) - new Date(dataBuque.inicioOp)) / 3600000 || 0;
+}
+
+function obtenerConsolidadoBuques() {
+  return Object.entries(sistemaBuques.buques).map(([idBuque, dataBuque]) => {
+    const tc = obtenerToneladasCamionBuque(dataBuque);
+    const tm = obtenerToneladasMecanizadoBuque(dataBuque);
+    const total = tc + tm;
+    const tiempoBrutoBuque = obtenerTiempoBrutoBuque(dataBuque);
+    const tiempoParadasBuque = obtenerTiempoParadasBuque(dataBuque);
+    const tiempoNetoBuque = Math.max(tiempoBrutoBuque - tiempoParadasBuque, 0);
+    const tph = tiempoNetoBuque > 0 ? total / tiempoNetoBuque : 0;
+
+    return {
+      id: idBuque,
+      nombre: obtenerNombreBuqueVisible(idBuque, dataBuque),
+      tc,
+      tm,
+      total,
+      tph,
+      tiempoBruto: tiempoBrutoBuque,
+      tiempoParadas: tiempoParadasBuque,
+      tiempoNeto: tiempoNetoBuque
+    };
+  });
+}
+
+function renderConsolidadoBuques() {
+  const tbody = document.getElementById('tbody-consolidado-buques');
+  if (!tbody) return;
+
+  const consolidado = obtenerConsolidadoBuques();
+  tbody.innerHTML = '';
+
+  consolidado.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.nombre}</td>
+      <td>${item.total.toFixed(2)}</td>
+      <td>${item.tph.toFixed(2)}</td>
+      <td>${item.tc.toFixed(2)}</td>
+      <td>${item.tm.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('dsh-consolidado-buques').innerText = `${consolidado.length} buques`;
+  document.getElementById('consolidado-total-general').innerText = consolidado.reduce((acc, item) => acc + item.total, 0).toFixed(2);
+}
+
+function renderChartsConsolidadoBuques() {
+  const consolidado = obtenerConsolidadoBuques();
+  const labels = consolidado.map(item => item.nombre);
+  const toneladas = consolidado.map(item => Number(item.total.toFixed(2)));
+  const tph = consolidado.map(item => Number(item.tph.toFixed(2)));
+
+  const canvasTon = document.getElementById('chart-toneladas-buque');
+  const canvasTph = document.getElementById('chart-tph-buque');
+  if (!canvasTon || !canvasTph || typeof Chart === 'undefined') return;
+
+  const dashboardView = document.getElementById('dashboard');
+  if (!dashboardView || !dashboardView.classList.contains('active')) return;
+
+  if (chartToneladasBuque) chartToneladasBuque.destroy();
+  if (chartTphBuque) chartTphBuque.destroy();
+
+  canvasTon.height = 120;
+  canvasTph.height = 120;
+
+  chartToneladasBuque = new Chart(canvasTon, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Toneladas descargadas (TM)',
+        data: toneladas,
+        backgroundColor: 'rgba(35, 85, 164, 0.75)',
+        borderColor: 'rgba(35, 85, 164, 1)',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'TM' } },
+        x: { ticks: { maxRotation: 45, minRotation: 0 } }
+      }
+    }
+  });
+
+  chartTphBuque = new Chart(canvasTph, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Velocidad TPH',
+        data: tph,
+        backgroundColor: 'rgba(39, 174, 96, 0.75)',
+        borderColor: 'rgba(39, 174, 96, 1)',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'TPH' } },
+        x: { ticks: { maxRotation: 45, minRotation: 0 } }
+      }
+    }
+  });
 }
 
 // ==== EXPORTAR A EXCEL ====
 function exportarTodoExcel() {
   const wb = XLSX.utils.book_new();
+  const consolidadoBuques = obtenerConsolidadoBuques();
   
-  // Hoja 1: Información General
   const infoGeneral = [[
     'Nombre Buque', 'ETA', 'Fecha NOR', 'Rata Contratada', 'Condición', 
     'Total Producto (TM)', 'Inicio Operación', 'Fin Operación', 'Laytime', 'Tiempo Operación'
@@ -1196,13 +1577,11 @@ function exportarTodoExcel() {
   const wsInfo = XLSX.utils.aoa_to_sheet(infoGeneral);
   XLSX.utils.book_append_sheet(wb, wsInfo, 'Información General');
   
-  // Hoja 2: Productos
   const productosData = [['Producto', 'Bodega', 'Declarado (TM)', 'Descargado (TM)', 'Usuario']];
   productos.forEach(p => productosData.push([p.tipo, p.bodega, p.declarado, p.descargado, p.usuario || '']));
   const wsProductos = XLSX.utils.aoa_to_sheet(productosData);
   XLSX.utils.book_append_sheet(wb, wsProductos, 'Productos');
   
-  // Hoja 3: Paradas
   const paradasData = [['Motivo', 'Bodega', 'Inicio', 'Fin', 'Duración (h)', 'Usuario']];
   paradas.forEach(p => {
     let duracion = 0;
@@ -1214,25 +1593,21 @@ function exportarTodoExcel() {
   const wsParadas = XLSX.utils.aoa_to_sheet(paradasData);
   XLSX.utils.book_append_sheet(wb, wsParadas, 'Paradas');
   
-  // Hoja 4: Camiones
   const camionesData = [['No. Listado', 'Placa', 'Ficha', 'Estatus', 'Usuario']];
   camiones.forEach(c => camionesData.push([c.nlist, c.placa, c.ficha, c.estatus, c.usuario || '']));
   const wsCamiones = XLSX.utils.aoa_to_sheet(camionesData);
   XLSX.utils.book_append_sheet(wb, wsCamiones, 'Camiones');
   
-  // Hoja 5: Correa
   const correaData = [['Línea', 'Producto', 'Toneladas', 'Hora', 'Usuario']];
   correa.forEach(c => correaData.push([c.linea, c.prod, c.tn, c.hora, c.usuario || '']));
   const wsCorrea = XLSX.utils.aoa_to_sheet(correaData);
   XLSX.utils.book_append_sheet(wb, wsCorrea, 'Correa Mecanizada');
   
-  // Hoja 6: Mecanizado
   const mecData = [['Producto', 'Toneladas', 'Hora', 'Usuario']];
   mecanizado.forEach(m => mecData.push([m.producto, m.tn, m.hora, m.usuario || '']));
   const wsMec = XLSX.utils.aoa_to_sheet(mecData);
   XLSX.utils.book_append_sheet(wb, wsMec, 'Mecanizado');
   
-  // Hoja 7: Dashboard
   const dashData = [
     ['Métrica', 'Valor'],
     ['Descarga Camión (TM)', document.getElementById('dsh-tot-camion').innerText],
@@ -1241,13 +1616,44 @@ function exportarTodoExcel() {
     ['Tiempo Bruto (h)', document.getElementById('dsh-tiempo-bruto').innerText],
     ['Tiempo Neto (h)', document.getElementById('dsh-tiempo-neto').innerText],
     ['TPH Promedio', document.getElementById('dsh-tph').innerText],
-    ['Laytime Restante (h)', document.getElementById('dsh-laytime-rest').innerText]
+    ['Laytime Restante (h)', document.getElementById('dsh-laytime-rest').innerText],
+    ['Buques Consolidados', consolidadoBuques.length]
   ];
   const wsDash = XLSX.utils.aoa_to_sheet(dashData);
   XLSX.utils.book_append_sheet(wb, wsDash, 'Dashboard');
+
+  const consolidadoData = [[
+    'Buque', 'Total Descargado (TM)', 'TPH', 'Camión (TM)', 'Mecanizado (TM)', 'Tiempo Bruto (h)', 'Tiempo Paradas (h)', 'Tiempo Neto (h)'
+  ]];
+  consolidadoBuques.forEach(item => consolidadoData.push([
+    item.nombre,
+    Number(item.total.toFixed(2)),
+    Number(item.tph.toFixed(2)),
+    Number(item.tc.toFixed(2)),
+    Number(item.tm.toFixed(2)),
+    Number(item.tiempoBruto.toFixed(2)),
+    Number(item.tiempoParadas.toFixed(2)),
+    Number(item.tiempoNeto.toFixed(2))
+  ]));
+  const wsConsolidado = XLSX.utils.aoa_to_sheet(consolidadoData);
+  wsConsolidado['!cols'] = [
+    { wch: 28 }, { wch: 22 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }
+  ];
+  XLSX.utils.book_append_sheet(wb, wsConsolidado, 'Consolidado');
+
+  const graficaData = [['Buque', 'Toneladas', 'TPH']];
+  consolidadoBuques.forEach(item => graficaData.push([
+    item.nombre,
+    Number(item.total.toFixed(2)),
+    Number(item.tph.toFixed(2))
+  ]));
+  const wsGrafica = XLSX.utils.aoa_to_sheet(graficaData);
+  wsGrafica['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, wsGrafica, 'Datos Gráfica');
   
   const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Trazabilidad_Buques_Completo_${fecha}.xlsx`);
+  const nombreBuque = (document.getElementById('buque-nombre').value || obtenerNombreBuqueVisible(sistemaBuques.activo, sistemaBuques.buques[sistemaBuques.activo] || {})).replace(/[^a-zA-Z0-9_-]+/g, '_');
+  XLSX.writeFile(wb, `Trazabilidad_${nombreBuque}_${fecha}.xlsx`);
 }
 
 function exportarSeccion(seccion) {
@@ -1324,7 +1730,8 @@ function exportarSeccion(seccion) {
   XLSX.utils.book_append_sheet(wb, ws, nombre);
   
   const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `${nombre}_${fecha}.xlsx`);
+  const nombreBuque = (document.getElementById('buque-nombre').value || obtenerNombreBuqueVisible(sistemaBuques.activo, sistemaBuques.buques[sistemaBuques.activo] || {})).replace(/[^a-zA-Z0-9_-]+/g, '_');
+  XLSX.writeFile(wb, `${nombre}_${nombreBuque}_${fecha}.xlsx`);
 }
 
 // ==== LAYTIME Y OPERACIÓN ====
@@ -1727,8 +2134,6 @@ function mostrarTonCamiones() {
   graficarTonCamiones(resumenHora, resumenHoraMec, horasV);
 }
 
-let ultimoResumenGlobal = { tc: 0, tm: 0, total: 0 };
-
 function updateDashboard() {
   document.getElementById('dsh-tot-camion').innerText = ultimoResumenGlobal.tc.toFixed(2) + ' TM';
   document.getElementById('dsh-tot-mec').innerText = ultimoResumenGlobal.tm.toFixed(2) + ' TM';
@@ -1797,16 +2202,21 @@ function graficarTonCamiones(objHoras, objHorasMec, horasV) {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('selector-buque').innerHTML = '';
   renderProductos();
   renderParadas();
   renderCamiones();
   renderCorrea();
   renderTablaMec();
+  actualizarSelectorBuques();
   updateDashboard();
   console.log('Sistema inicializado correctamente');
 });
 
-setInterval(updateDashboard, 30000);
+setInterval(() => {
+  updateDashboard();
+  guardarDatos();
+}, 30000);
 </script>
 </body>
 </html>
